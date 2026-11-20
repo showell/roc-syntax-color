@@ -2,7 +2,7 @@
 
 A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a `<span class="syn-...">` around each comment, string, number, keyword, name and type. It colors four languages: Roc, JavaScript, Zig and [Shale](https://github.com/showell/shale), a small scripting language by the same author. Using the package takes only Roc.
 
-The code was written by Claude, an AI coding agent, working from its author's direction, and the repository is set up for agents to keep extending it: point one at this repo and ask for a new language, and the steps below are what it follows.
+The code was written by Claude, an AI coding agent, with human supervision, and the repository is set up for agents to keep extending it: point one at this repo and ask for a new language, and the steps below are what it follows.
 
 It's pure functions from `Str` to `Str` that stand alone, so any Roc app on any platform can import it. Any text at all can be colored: an unterminated string or half a program still comes out colored, and the HTML with its tags removed is exactly the escaped input.
 
