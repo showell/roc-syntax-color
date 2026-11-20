@@ -1,8 +1,10 @@
 # roc-syntax-color
 
-A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a `<span class="syn-...">` around each comment, string, number, keyword, name and type. It colors four languages: Roc, JavaScript, Zig and [Shale](https://github.com/showell/shale), a small scripting language by the same author. You don't need Shale to use the package.
+A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a `<span class="syn-...">` around each comment, string, number, keyword, name and type. It colors four languages: Roc, JavaScript, Zig and [Shale](https://github.com/showell/shale), a small scripting language by the same author. Using the package takes only Roc.
 
-It's pure functions from `Str` to `Str`, with no dependencies and no platform of its own, so any Roc app can import it. Any text at all can be colored: an unterminated string or half a program still comes out colored, and the HTML with its tags removed is exactly the escaped input.
+The code was written by Claude, an AI coding agent, working from its author's direction, and the repository is set up for agents to keep extending it: point one at this repo and ask for a new language, and the steps below are what it follows.
+
+It's pure functions from `Str` to `Str` that stand alone, so any Roc app on any platform can import it. Any text at all can be colored: an unterminated string or half a program still comes out colored, and the HTML with its tags removed is exactly the escaped input.
 
 ## An example
 
@@ -16,7 +18,7 @@ gives
 <span class="syn-name">x</span> = <span class="syn-number">1</span> <span class="syn-comment"># one</span>
 ```
 
-Your stylesheet picks the colors. The six classes are `syn-comment`, `syn-string`, `syn-number`, `syn-keyword`, `syn-name` and `syn-type`. Everything else (operators, punctuation, spaces) is plain text with no span. For example:
+Your stylesheet picks the colors. The six classes are `syn-comment`, `syn-string`, `syn-number`, `syn-keyword`, `syn-name` and `syn-type`. Everything else (operators, punctuation, spaces) is plain text. For example:
 
 ```css
 .syn-comment { color: #6a737d; }
@@ -26,7 +28,7 @@ Your stylesheet picks the colors. The six classes are `syn-comment`, `syn-string
 
 ## Using it from a Roc app
 
-There's no release bundle yet, so clone this repository next to your app's repository and name the package by its relative path:
+To use it, clone this repository next to your app's repository and name the package by its relative path:
 
 ```roc
 app [main!] {
@@ -40,7 +42,7 @@ page_code : Str -> Str
 page_code = |code| "<pre><code>${SyntaxColor.html(SyntaxColor.roc, code)}</code></pre>"
 ```
 
-The path is relative to the file that names it. The file `roc-version` names the Roc nightly this package is tested with. Use that one: Roc still changes between nightlies, and another nightly may not compile it.
+The path is relative to the file that names it. The file `roc-version` names the Roc nightly this package is tested with. Use that one, since Roc changes between nightlies.
 
 ## The interface
 
@@ -64,7 +66,7 @@ The full check holds its counts exactly, so the same change updates them.
 
 ## Checking it
 
-`roc test package/main.roc` runs the tests and needs nothing but Roc. The full check, which contributors run before a pull request, also runs:
+`roc test package/main.roc` runs the tests with Roc alone. The full check, which contributors run before a pull request, also runs:
 - `roc fmt --check` and `roc check`;
 - the repository's style checks;
 - real files whose coloring is recorded byte for byte in `oracle/`. For Roc and Shale, those samples match the colorers this package replaced. For JavaScript and Zig, they're the package's own answers, read by eye, so they guard against changes.
