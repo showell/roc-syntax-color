@@ -1,0 +1,44 @@
+-- budget: steps=400000000 arena_bytes=1500000000 call_bytes=40000000
+-- This records oracle/shale_files.jsonl's answers as the package's own, after
+-- a deliberate change to the Shale lexer. The samples' texts stay as they are,
+-- frozen: each is colored whole again by the harness, as tools/verify.shale
+-- asks for it. Read every sample that moved in the diff before committing it;
+-- tools/verify.shale then holds the package to them. From the repository's
+-- root, after tools/verify.shale has built the harness:
+--
+--   shale tools/record_shale_fixtures.shale
+--
+-- The samples are every Shale cookbook recipe, the books book's Shale files
+-- and the Shale functions and line ranges that book quotes, as they were on
+-- 2026-11-20. They were first recorded from the Shale cookbook's
+-- color_shale.shale, the colorer this package replaced (DESIGN.md, "Where the
+-- samples came from").
+use("./samples.shale")
+
+const TOOL = ".zig-cache/syntax_color/harness"
+const MARK = "<!-- syntax_color answer -->\n"
+const WANT = "roc-pin: roc-syntax-color's harness, built by its gate"
+
+if not exists(TOOL) then fail("record_shale_fixtures: no harness at " .. TOOL .. ": run tools/verify.shale first") end
+local samples = read_corpus("shale_files")
+local argv = {real(TOOL)}
+for r in samples do
+  push(argv, "shale")
+  push(argv, text_of(r.html))
+end
+local out = must(run(argv, {timeout_ms = 120000, whole = 60000000, want = WANT}))
+local answers = drop(split(out.out, MARK), 1)
+if #answers ~= #samples then fail("record_shale_fixtures: " .. #samples .. " samples got " .. #answers .. " answers") end
+
+local recorded = {}
+local moved = 0
+for i = 1, #samples do
+  if answers[i] ~= samples[i].html then
+    moved = moved + 1
+    print("record_shale_fixtures: moved " .. samples[i].name)
+  end
+  if text_of(answers[i]) ~= text_of(samples[i].html) then fail("record_shale_fixtures: " .. samples[i].name .. "'s text changed") end
+  push(recorded, json_write({name = samples[i].name, outcome = "reviewed", html = answers[i]}))
+end
+replace(ORACLE .. "/shale_files.jsonl", join(recorded, "\n") .. "\n")
+print("record_shale_fixtures: " .. #samples .. " samples, " .. moved .. " answers moved")

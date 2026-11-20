@@ -23,7 +23,7 @@ SyntaxColor :: [].{
 	roc : SyntaxColor.Language
 	roc = { name: "roc", spans: RocSyntax.spans }
 
-	## Shale, as the Shale cookbook's color_shale.shale colors it.
+	## Shale, as its own lexer reads it, with the classes the others use.
 	shale : SyntaxColor.Language
 	shale = { name: "shale", spans: ShaleSyntax.spans }
 

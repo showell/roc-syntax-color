@@ -34,22 +34,17 @@ function's body from a record. `RocSyntax.roc`'s header says the rules.
 
 It runs `roc fmt --check`, `roc check` and `roc test` (its count held exact),
 builds `harness/main.roc` on Roc's echo platform, and holds the harness's
-answer for every sample in `oracle/` to what was recorded, byte for byte. A
-sample known to differ is named in `oracle/known_mismatches.txt` with its
-reason, and the list is held exact both ways.
+answer for every sample in `oracle/` to what was recorded, byte for byte.
 
-The Roc, JavaScript and Zig samples are the package's own answers, frozen:
-re-record them only after a deliberate change to a lexer, and read every
-sample that moved in the diff. `tools/record_roc_fixtures.shale` colors the
-Roc samples' frozen texts again, from this checkout;
+Every sample is the package's own answer, frozen: re-record them only after a
+deliberate change to a lexer, and read every sample that moved in the diff.
+`tools/record_roc_fixtures.shale` and `tools/record_shale_fixtures.shale`
+color the Roc and Shale samples' frozen texts again, from this checkout;
 `tools/record_js_fixtures.shale` and `tools/record_zig_fixtures.shale` read
 their files from a roc-apps checkout with this one beside it, and
 `tools/record_c_fixtures.shale` reads Shale's C beside this checkout and
-fetches git's first commit from GitHub at that commit. The Shale
-samples are what the Shale cookbook's `color_shale.shale` makes of them, and
-`tools/record_shale_oracle.shale` records them again, from a roc-apps checkout
-with this repository, the books book's checkout and the Shale cookbook beside
-it. Each recorder's header says what it writes.
+fetches git's first commit from GitHub at that commit. Each recorder's header
+says what it writes.
 
 A header's keywords follow Roc's tokenizer at the pin: `app`, `hosted`,
 `module`, `package` and `platform` start one, and in it those words and a
@@ -70,13 +65,19 @@ and one block. On 2026-11-20 color_roc retired, and the samples were recorded
 again as the package's own answers, read by eye; those seven are all that
 moved.
 
+The Shale samples are every Shale cookbook recipe, the books book's Shale
+files and the Shale the books book quotes in part (109). They were first
+recorded from the Shale cookbook's `color_shale.shale`, which the package
+matched byte for byte except in two fragments color_shale refused, because a
+function or a run of lines cut from its file fails `shale --check` alone. On
+2026-11-20 color_shale retired, and the samples were recorded again as the
+package's own answers; those two are all that moved.
+
 ## Status (2026-11-20)
 
 - Colored alone, without their files, 219 of the 223 Roc blocks match how they
   read in their files. The other four are cut from a function's body, whose
   `name = ...` lines read as top-level definitions alone.
-- 107 of 109 Shale samples match color_shale; the two others are fragments
-  color_shale refuses because they fail `shale --check` alone.
 - JavaScript had no colorer before, so its 13 fixtures (`oracle/js_files.jsonl`,
   from `tools/record_js_fixtures.shale`) are the package's own answers, read
   by eye.

@@ -18,15 +18,10 @@
 --   - the oracle (each sample that differs is written, its first differing
 --     line, to .zig-cache/syntax_color/differences.txt): each sample of
 --     oracle/*.jsonl, colored by the harness, held byte for byte to what was
---     recorded, with the samples known to differ named in
---     oracle/known_mismatches.txt, each with its reason. A sample that differs
---     and isn't named fails, and so does one named that matches. Each corpus's
---     count is held to CORPORA. The Roc, JavaScript, Zig and C samples are the
---     package's own answers, read by eye (tools/record_roc_fixtures.shale,
---     tools/record_js_fixtures.shale, tools/record_zig_fixtures.shale,
---     tools/record_c_fixtures.shale); the
---     Shale samples are the cookbook's color_shale.shale's
---     (tools/record_shale_oracle.shale).
+--     recorded, and each corpus's count held to CORPORA. Every sample is the
+--     package's own answer, read by eye (tools/record_roc_fixtures.shale,
+--     tools/record_shale_fixtures.shale, tools/record_js_fixtures.shale,
+--     tools/record_zig_fixtures.shale, tools/record_c_fixtures.shale).
 --
 -- A Roc block is colored as it reads in its file: the harness colors the file
 -- and takes the lines the block's note names, as the book does. The blocks are
@@ -53,20 +48,6 @@ function say(ok, what)
   push(board.lines, mark .. "  " .. what)
   print(mark .. "  " .. what)
   return nil
-end
-
--- The known mismatches, `corpus<TAB>name<TAB>why` a line, as a set of
--- `corpus<TAB>name`.
-function known_mismatches()
-  local known = {}
-  for l in lines(read(ORACLE .. "/known_mismatches.txt")) do
-    if trim(l) ~= "" and not starts_with(l, "#") then
-      local parts = split(l, "\t")
-      if #parts ~= 3 then fail("verify: known_mismatches.txt wants corpus, name and why, tab apart: " .. l) end
-      known[parts[1] .. "\t" .. parts[2]] = parts[3]
-    end
-  end
-  return known
 end
 
 -- Every request, with what it must answer: {corpus, name, argv, want}.
@@ -136,7 +117,6 @@ end
 function check_oracle(tool)
   local reqs = requests()
   local got = answers(tool, reqs)
-  local known = known_mismatches()
   local tally = {}
   local alone = 0
   local diffs = {}
@@ -148,35 +128,20 @@ function check_oracle(tool)
     if q.corpus == "roc_blocks_alone" then
       if same then alone = alone + 1 end
     else
-      if not has_key(tally, q.corpus) then tally[q.corpus] = {samples = 0, matched = 0, known = 0, wrong = {}} end
+      if not has_key(tally, q.corpus) then tally[q.corpus] = {samples = 0, wrong = {}} end
       local t = tally[q.corpus]
       t.samples = t.samples + 1
-      local key = q.corpus .. "\t" .. q.name
-      if same and not has_key(known, key) then
-        t.matched = t.matched + 1
-      elseif not same and has_key(known, key) then
-        t.known = t.known + 1
-      elseif same then
-        push(t.wrong, q.name .. ": matches, but known_mismatches.txt says it differs")
-      else
-        push(t.wrong, q.name .. ": differs")
-      end
-      known[key .. "\tseen"] = true
+      if not same then push(t.wrong, q.name) end
     end
     i = i + 1
   end
   replace(WORK .. "/differences.txt", join(diffs, "\n\n") .. "\n")
   for corpus in sort(keys(CORPORA)) do
-    local t = get(tally, corpus, {samples = 0, matched = 0, known = 0, wrong = {}})
-    for w in t.wrong do print("      " .. corpus .. ": " .. w) end
+    local t = get(tally, corpus, {samples = 0, wrong = {}})
+    for w in t.wrong do print("      " .. corpus .. ": " .. w .. ": differs") end
     local ok = t.samples == CORPORA[corpus] and #t.wrong == 0
-    say(ok, corpus .. ": " .. t.samples .. " samples (held at " .. CORPORA[corpus] .. "), " .. t.matched .. " match byte for byte, " .. t.known .. " differ as known_mismatches.txt says, " .. #t.wrong .. " wrong")
+    say(ok, corpus .. ": " .. t.samples .. " samples (held at " .. CORPORA[corpus] .. "), " .. (t.samples - #t.wrong) .. " match byte for byte, " .. #t.wrong .. " differ")
   end
-  local stale = {}
-  for key in keys(known) do
-    if not ends_with(key, "\tseen") and not has_key(known, key .. "\tseen") then push(stale, key) end
-  end
-  say(#stale == 0, "known_mismatches.txt: every entry names a sample" .. (#stale == 0 and "" or (": not " .. join(stale, ", "))))
   say(alone == ALONE_MATCHES, "roc_blocks colored alone: " .. alone .. " match (held at " .. ALONE_MATCHES .. ")")
   return nil
 end

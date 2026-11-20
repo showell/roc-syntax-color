@@ -1,7 +1,6 @@
 ## ShaleSyntax splits Shale source into spans as Shale's own lexer reads it
-## (shale's src/script/lex.zig), and as the Shale cookbook's color_shale.shale
-## colors it: comments, strings, integers and keywords, and the name right
-## after `function`, with names and symbols left plain.
+## (shale's src/script/lex.zig): comments, strings, integers and keywords, and
+## the name right after `function`, with names and symbols left plain.
 ##
 ## Where Shale's lexer refuses a text, these spans still cover it: a string or
 ## a long string that never closes runs to the end of its line or of the text,
