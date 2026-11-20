@@ -69,7 +69,7 @@ The full check holds its counts exactly, so the same change updates them.
 `roc test package/main.roc` runs the tests with Roc alone. The full check, which contributors run before a pull request, also runs:
 - `roc fmt --check` and `roc check`;
 - the repository's style checks;
-- real files whose coloring is recorded byte for byte in `oracle/`. For Roc, JavaScript, Zig and C, those samples are the package's own answers, recorded after a deliberate change and read by eye, so they guard against changes. For Shale, they match the cookbook's colorer, `color_shale.shale`.
+- real files whose coloring is recorded byte for byte in `oracle/`. Those samples are the package's own answers, recorded after a deliberate change and read by eye, so they guard against changes.
 
 The full check is a Shale script, so it needs [Shale](https://github.com/showell/shale) installed:
 

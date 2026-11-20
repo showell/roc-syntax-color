@@ -11,11 +11,8 @@
 --   shale tools/record_roc_fixtures.shale
 --
 -- The Roc samples were first recorded from the colorer the package replaced
--- (DESIGN.md, "Where the samples came from"), and oracle/known_mismatches.txt
--- names where they differed. Once the package's own answers are recorded those
--- lines name nothing that differs, so this drops them from the file and says
--- which; the Shale lines stay. The count of blocks that color the same alone
--- may move too: verify says the new one, for its ALONE_MATCHES.
+-- (DESIGN.md, "Where the samples came from"). The count of blocks that color
+-- the same alone may move too: verify says the new one, for its ALONE_MATCHES.
 use("./samples.shale")
 
 const TOOL = ".zig-cache/syntax_color/harness"
@@ -58,11 +55,4 @@ end
 replace(ORACLE .. "/roc_files.jsonl", join(file_lines, "\n") .. "\n")
 replace(ORACLE .. "/roc_blocks.jsonl", join(block_lines, "\n") .. "\n")
 
-local kept = {}
-local dropped = {}
-for l in lines(read(ORACLE .. "/known_mismatches.txt")) do
-  if starts_with(l, "roc_files\t") or starts_with(l, "roc_blocks\t") then push(dropped, split(l, "\t")[2]) else push(kept, l) end
-end
-if #dropped > 0 then replace(ORACLE .. "/known_mismatches.txt", join(kept, "\n") .. "\n") end
-for d in dropped do print("record_roc_fixtures: known_mismatches.txt drops " .. d) end
 print("record_roc_fixtures: " .. #files .. " files and " .. #blocks .. " blocks, " .. moved .. " answers moved")

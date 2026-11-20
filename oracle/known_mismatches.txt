@@ -1,5 +1,0 @@
-# The samples whose colors differ from what was recorded, and why: a line each,
-# corpus, name and why, apart by tabs. Only Shale's are recorded from another
-# colorer, so only Shale's can differ. tools/verify.shale holds this list exact.
-shale_files	roc-apps/canvas_apps/safari/tutorial/build.shale, function fenced_failure	color_shale refuses it, since one function alone fails `shale --check` (it calls functions it doesn't hold); its lexing is sound, and ShaleSyntax colors it
-shale_files	books-book/build.shale, the prose check	color_shale refuses it, since a run of lines cut from a function fails `shale --check`; ShaleSyntax colors it
