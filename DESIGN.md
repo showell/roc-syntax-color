@@ -12,7 +12,16 @@ a template's `${...}`, and the token before, to tell a regular expression's
 the token before was `fn` or a `.`: the name after `fn` is a name, and a word
 after a `.` is a field, never a keyword or a type. Its primitive types (`u8`,
 `usize`, `type`, `anytype`) are types, and its builtins (`@import`) are
-keywords. Shale's follows Shale's own lexer (`src/script/lex.zig` in the
+keywords. C's reads as a C compiler's preprocessor first sees the text: a
+number is a pp-number, a backslash at a line's end splices the next line on,
+and a `#` first on its line starts a directive that runs to its line's end.
+The package has no class for the preprocessor, so a directive's `#` and its
+word are one keyword span, as Zig's builtins are keywords. It keeps whether
+the token before was `struct`, `union` or `enum` (a tag after it is a type),
+`#define` (a name after it is the macro's) or `#include` (a `<` after it opens
+a header's name, a string), and how many braces are open: a word called
+outside every brace is a function's name, and inside them a call is plain.
+Shale's follows Shale's own lexer (`src/script/lex.zig` in the
 shale repository). Roc's has no lexer of record to
 follow, and its samples were first recorded from a colorer that read roc-ast's
 tree, so RocSyntax keeps the little it needs to agree with the tree: which brackets are open and what the token
@@ -34,7 +43,9 @@ re-record them only after a deliberate change to a lexer, and read every
 sample that moved in the diff. `tools/record_roc_fixtures.shale` colors the
 Roc samples' frozen texts again, from this checkout;
 `tools/record_js_fixtures.shale` and `tools/record_zig_fixtures.shale` read
-their files from a roc-apps checkout with this one beside it. The Shale
+their files from a roc-apps checkout with this one beside it, and
+`tools/record_c_fixtures.shale` reads Shale's C beside this checkout and
+fetches git's first commit from GitHub at that commit. The Shale
 samples are what the Shale cookbook's `color_shale.shale` makes of them, and
 `tools/record_shale_oracle.shale` records them again, from a roc-apps checkout
 with this repository, the books book's checkout and the Shale cookbook beside
@@ -73,6 +84,10 @@ moved.
   `tools/record_zig_fixtures.shale`) are real files from Shale, the book
   builder's host, roc-chat's host, zig-webbox and zig-metal-unikernel, read by
   eye the same way.
+- C had none either: its 13 fixtures (`oracle/c_files.jsonl`, from
+  `tools/record_c_fixtures.shale`) are six files of git's first commit
+  (e83c5163, Linus Torvalds' own) and seven of Shale's C runtime, read by eye
+  the same way.
 - The gate takes about 3 seconds on a warm Roc cache.
 - Two books in roc-apps color their code with it, behind the book builder's
   coloring hook: the Safari tutorial (`canvas_apps/safari/tutorial/app/QuotedColor.roc`)

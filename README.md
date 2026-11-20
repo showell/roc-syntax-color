@@ -1,6 +1,6 @@
 # roc-syntax-color
 
-A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a `<span class="syn-...">` around each comment, string, number, keyword, name and type. It colors four languages: Roc, JavaScript, Zig and [Shale](https://github.com/showell/shale), a small scripting language by the same author. Using the package takes only Roc.
+A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a `<span class="syn-...">` around each comment, string, number, keyword, name and type. It colors five languages: Roc, JavaScript, Zig, C and [Shale](https://github.com/showell/shale), a small scripting language by the same author. Using the package takes only Roc.
 
 The code was written by Claude, an AI coding agent, with human supervision, and the repository is set up for agents to keep extending it: point one at this repo and ask for a new language, and the steps below are what it follows.
 
@@ -53,13 +53,13 @@ It all lives in `package/SyntaxColor.roc`:
 - `SyntaxColor.range_html(text, { spans, start, end })` colors one byte range of the text using the spans of the whole. Color a file once, then show any part of it colored as it reads in place. The range must start and end on character boundaries; one that ends inside a UTF-8 character stops the program.
 - `SyntaxColor.escaped_text(text)` is the text with `&`, `<`, `>`, `"` and `'` escaped, the same escaping the colored output uses.
 
-A language is a `SyntaxColor.Language`, a record `{ name, spans }` whose `spans : Str -> List(Span)` is its lexer. The four are `SyntaxColor.roc`, `SyntaxColor.js`, `SyntaxColor.zig` and `SyntaxColor.shale`, named `"roc"`, `"js"`, `"zig"` and `"shale"`. Each lexer is a module of its own: `RocSyntax.roc`, `JsSyntax.roc` and so on.
+A language is a `SyntaxColor.Language`, a record `{ name, spans }` whose `spans : Str -> List(Span)` is its lexer. The five are `SyntaxColor.roc`, `SyntaxColor.js`, `SyntaxColor.zig`, `SyntaxColor.c` and `SyntaxColor.shale`, named `"roc"`, `"js"`, `"zig"`, `"c"` and `"shale"`. There is no class for C's preprocessor, so a directive (`#include`, `#define`) is colored as a keyword. Each lexer is a module of its own: `RocSyntax.roc`, `JsSyntax.roc` and so on.
 
 ## Adding a language
 
 1. Write `package/FooSyntax.roc` with a `spans` function that covers every byte exactly once.
-2. Add it to the `package [...]` list in `package/main.roc`.
-3. Add a `foo` value beside the four in `SyntaxColor.roc`, with an `expect` that holds it to the hostile texts there.
+2. Add it to the `package [...]` list in `package/main.roc`. Its tests can live in the module or, when they are long, in a `package/FooSyntaxSpec.roc` listed there too.
+3. Add a `foo` value beside the others in `SyntaxColor.roc`, with an `expect` that holds it to the hostile texts there.
 4. Record some real files as samples in `oracle/` ([DESIGN.md](DESIGN.md) says how).
 
 The full check holds its counts exactly, so the same change updates them.
@@ -69,7 +69,7 @@ The full check holds its counts exactly, so the same change updates them.
 `roc test package/main.roc` runs the tests with Roc alone. The full check, which contributors run before a pull request, also runs:
 - `roc fmt --check` and `roc check`;
 - the repository's style checks;
-- real files whose coloring is recorded byte for byte in `oracle/`. For Roc, JavaScript and Zig, those samples are the package's own answers, recorded after a deliberate change and read by eye, so they guard against changes. For Shale, they match the cookbook's colorer, `color_shale.shale`.
+- real files whose coloring is recorded byte for byte in `oracle/`. For Roc, JavaScript, Zig and C, those samples are the package's own answers, recorded after a deliberate change and read by eye, so they guard against changes. For Shale, they match the cookbook's colorer, `color_shale.shale`.
 
 The full check is a Shale script, so it needs [Shale](https://github.com/showell/shale) installed:
 

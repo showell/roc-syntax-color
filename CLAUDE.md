@@ -1,6 +1,6 @@
 # roc-syntax-color
 
-A Roc package that colors Roc, Shale, JavaScript and Zig for web pages
+A Roc package that colors Roc, Shale, JavaScript, Zig and C for web pages
 ([README.md](README.md); how the lexers and the oracle work is
 [DESIGN.md](DESIGN.md)).
 
@@ -15,11 +15,13 @@ step. This file adds only what is particular here.
   `tools/lints.shale`'s `HELD`, which came from roc-apps' quality baseline.
 - **The Roc is the pin** in `roc-version`, at `tools:roc-<pin>/roc`. It moves
   with roc-apps' pin, since roc-apps and roc-chat import this package.
-- **The oracle is recorded, not edited.** The Roc, JavaScript and Zig samples
-  are the package's own answers, frozen; the Shale samples are the cookbook's
-  `color_shale.shale`'s. `tools/record_roc_fixtures.shale` runs here; the other
-  recorders run from a roc-apps checkout with this one beside it, since their
-  samples are other repositories' files. Re-record only for a deliberate
+- **The oracle is recorded, not edited.** The Roc, JavaScript, Zig and C
+  samples are the package's own answers, frozen; the Shale samples are the
+  cookbook's `color_shale.shale`'s. `tools/record_roc_fixtures.shale` and
+  `tools/record_c_fixtures.shale` run here (C's with Shale beside this checkout,
+  and git's first commit fetched from GitHub); the other recorders run from a
+  roc-apps checkout with this one beside it, since their samples are other
+  repositories' files. Re-record only for a deliberate
   change, and read the diff.
 - **Users name the package by relative path**, from a checkout beside theirs:
   roc-apps (the Safari tutorial and the books book) and roc-chat. A change to
