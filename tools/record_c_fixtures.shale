@@ -1,0 +1,68 @@
+-- budget: steps=200000000 arena_bytes=1000000000 call_bytes=40000000
+-- This records oracle/c_files.jsonl, the C fixtures. No script colored C
+-- before the package did, so the fixtures are the package's own answers for
+-- real C, each read by eye before it was committed; tools/verify.shale then
+-- holds the package to them. Run it from this repository's root, with Shale
+-- beside it under the `repos:` mount, after tools/verify.shale has built the
+-- harness:
+--
+--   shale tools/record_c_fixtures.shale
+--
+-- Half the files are git's first commit, Linus Torvalds' own, fetched from
+-- GitHub at that commit, so they never move; the rest are Shale's C runtime
+-- as it is beside this checkout. A fixture holds the file's text as it was
+-- recorded, so Shale can move on without moving the fixtures. Re-record only
+-- for a deliberate change to the C lexer, and read every sample that moved in
+-- the diff.
+const TOOL = ".zig-cache/syntax_color/harness"
+const OUT = "oracle/c_files.jsonl"
+const MARK = "<!-- syntax_color answer -->\n"
+const WANT = "roc-pin: syntax_color's harness, built by its gate"
+const GIT_COMMIT = "e83c5163316f89bfbde7d9ab23ca2e25604af290"
+
+-- git's first commit: its header, full of macros and structs, and the
+-- programs, with K&R's brace on its own line and octal modes.
+const GIT_FILES = {"cache.h", "read-cache.c", "init-db.c", "update-cache.c", "show-diff.c", "write-tree.c"}
+
+-- Shale's runtime: headers whose macros splice lines, the CLI's entry point,
+-- a regular expression engine and the tests' harness.
+const SHALE_FILES = {
+  "repos:shale/c/foundation/test.h",
+  "repos:shale/c/foundation/slice.h",
+  "repos:shale/c/foundation/status.h",
+  "repos:shale/c/script/run.h",
+  "repos:shale/c/script/regex.h",
+  "repos:shale/c/shale.c",
+  "repos:shale/c/tests/test_map.c",
+}
+
+if not exists(TOOL) then fail("record_c_fixtures: no harness at " .. TOOL .. ": run tools/verify.shale first") end
+local names = {}
+local texts = {}
+for f in GIT_FILES do
+  local url = "https://raw.githubusercontent.com/git/git/" .. GIT_COMMIT .. "/" .. f
+  local r = http_get(url)
+  if r.status ~= 200 then fail("record_c_fixtures: " .. url .. " answered " .. r.status) end
+  push(names, "git@" .. sub(GIT_COMMIT, 1, 12) .. ":" .. f)
+  push(texts, r.body)
+end
+for f in SHALE_FILES do
+  push(names, f)
+  push(texts, read(f))
+end
+local argv = {real(TOOL)}
+for t in texts do
+  push(argv, "c")
+  push(argv, t)
+end
+local r = must(run(argv, {timeout_ms = 120000, whole = 20000000, want = WANT}))
+local answers = drop(split(r.out, MARK), 1)
+if #answers ~= #names then fail("record_c_fixtures: " .. #names .. " files got " .. #answers .. " answers") end
+local out = {}
+local i = 1
+while i <= #names do
+  push(out, json_write({name = names[i], outcome = "reviewed", html = answers[i]}))
+  i = i + 1
+end
+replace(OUT, join(out, "\n") .. "\n")
+print("record_c_fixtures: " .. #names .. " files")

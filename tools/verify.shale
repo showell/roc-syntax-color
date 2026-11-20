@@ -12,17 +12,19 @@
 --     pins (tools:roc-<pin>/roc);
 --   - `roc check` of the harness, which reaches every module, with no error and
 --     no warning;
---   - `roc test`, its count held to the `expect` lines in the package, and
---     both to EXPECTS;
+--   - `roc test package/main.roc`, which reaches every module the package
+--     lists, a `*Spec.roc` of tests too, its count held to the `expect` lines in
+--     the package, and both to EXPECTS;
 --   - the oracle (each sample that differs is written, its first differing
 --     line, to .zig-cache/syntax_color/differences.txt): each sample of
 --     oracle/*.jsonl, colored by the harness, held byte for byte to what was
 --     recorded, with the samples known to differ named in
 --     oracle/known_mismatches.txt, each with its reason. A sample that differs
 --     and isn't named fails, and so does one named that matches. Each corpus's
---     count is held to CORPORA. The Roc, JavaScript and Zig samples are the
+--     count is held to CORPORA. The Roc, JavaScript, Zig and C samples are the
 --     package's own answers, read by eye (tools/record_roc_fixtures.shale,
---     tools/record_js_fixtures.shale, tools/record_zig_fixtures.shale); the
+--     tools/record_js_fixtures.shale, tools/record_zig_fixtures.shale,
+--     tools/record_c_fixtures.shale); the
 --     Shale samples are the cookbook's color_shale.shale's
 --     (tools/record_shale_oracle.shale).
 --
@@ -39,8 +41,8 @@ const PACKAGE_DIR = "package"
 const WORK = ".zig-cache/syntax_color"
 const MARK = "<!-- syntax_color answer -->\n"
 const ARG_BYTES = 700000
-const EXPECTS = 182
-const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13, zig_files = 13}
+const EXPECTS = 209
+const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13, zig_files = 13, c_files = 13}
 const ALONE_MATCHES = 219
 
 const board = {lines = {}, failed = 0}
@@ -88,6 +90,9 @@ function requests()
   end
   for r in read_corpus("zig_files") do
     push(out, {corpus = "zig_files", name = r.name, argv = {"zig", text_of(r.html)}, want = r.html})
+  end
+  for r in read_corpus("c_files") do
+    push(out, {corpus = "c_files", name = r.name, argv = {"c", text_of(r.html)}, want = r.html})
   end
   return out
 end
@@ -236,11 +241,11 @@ local c = run({roc, "check", "main.roc"}, {cwd = HARNESS_DIR, timeout_ms = 12000
 local c_marks = marks(c.out)
 say(c.code == 0 and c_marks == 0 and contains(c.out, "No errors found"), "roc check harness/main.roc: " .. c_marks .. " errors and warnings")
 
-local t = run({roc, "test", "main.roc"}, {cwd = HARNESS_DIR, timeout_ms = 300000, tail = 40, want = WANT})
+local t = run({roc, "test", "main.roc"}, {cwd = PACKAGE_DIR, timeout_ms = 300000, tail = 40, want = WANT})
 local passed = re_find(t.out, "All \\(([0-9]+)\\) tests passed")
 local ran = passed ~= nil and tonumber(passed.groups[1]) or -1
 local written = count_expects()
-say(t.code == 0 and ran == written and ran == EXPECTS, "roc test: " .. ran .. " passed, " .. written .. " expect lines in package/ (held at " .. EXPECTS .. ")")
+say(t.code == 0 and ran == written and ran == EXPECTS, "roc test package/main.roc: " .. ran .. " passed, " .. written .. " expect lines in package/ (held at " .. EXPECTS .. ")")
 if t.code ~= 0 then print(trim(t.out)) end
 
 mkdir(WORK)

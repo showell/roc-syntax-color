@@ -134,7 +134,7 @@ code_step = |bytes, state| {
 	} else if byte == '/' and next == '/' {
 		pass(state, { class: Comment, end: Bytes.line_end(bytes, at) })
 	} else if byte == '/' and next == '*' {
-		pass(state, { class: Comment, end: block_comment_end(bytes, at + 2) })
+		pass(state, { class: Comment, end: Bytes.block_comment_end(bytes, at + 2) })
 	} else if byte == '#' and next == '!' and at == 0 {
 		pass(state, { class: Comment, end: Bytes.line_end(bytes, at) })
 	} else if byte == '"' or byte == '\'' {
@@ -142,7 +142,7 @@ code_step = |bytes, state| {
 			state,
 			{
 				class: String,
-				end: quoted_end(bytes, { at: at + 1, quote: byte }),
+				end: Bytes.continued_quoted_end(bytes, { at: at + 1, quote: byte }),
 				before: Value,
 			},
 		)
@@ -339,30 +339,6 @@ template_text_end = |bytes, at| {
 	U64.min($stop, bytes.len())
 }
 
-## The end of a quoted string whose text starts at `at`: just past its closing
-## quote, or where its line or the text ends. A backslash keeps the byte after
-## it, a newline too, as a line continuation.
-quoted_end : List(U8), { at : U64, quote : U8 } -> U64
-quoted_end = |bytes, { at, quote }| {
-	var $at = at
-	var $end = bytes.len()
-	while $at < bytes.len() {
-		byte = Bytes.byte_at(bytes, $at)
-		if byte == quote {
-			$end = $at + 1
-			$at = bytes.len()
-		} else if byte == '\n' {
-			$end = $at
-			$at = bytes.len()
-		} else if byte == '\\' {
-			$at = $at + 2
-		} else {
-			$at = $at + 1
-		}
-	}
-	U64.min($end, bytes.len())
-}
-
 ## The end of a regular expression whose body starts at `at`: past its closing
 ## `/` and its flags. A `/` inside a class, `[/]`, or after a backslash doesn't
 ## close it, and one still open stops at its line's end.
@@ -392,23 +368,6 @@ regex_end = |bytes, at| {
 		}
 	}
 	U64.min($end, bytes.len())
-}
-
-## The end of a block comment whose text starts at `at`: past its `*/`, or the
-## end of the text.
-block_comment_end : List(U8), U64 -> U64
-block_comment_end = |bytes, at| {
-	var $at = at
-	var $end = bytes.len()
-	while $at < bytes.len() {
-		if Bytes.byte_at(bytes, $at) == '*' and Bytes.byte_at(bytes, $at + 1) == '/' {
-			$end = $at + 2
-			$at = bytes.len()
-		} else {
-			$at = $at + 1
-		}
-	}
-	$end
 }
 
 ## The end of a number's digits at `at`: `0x1F`, `0b1`, `0o7`, or digits with a

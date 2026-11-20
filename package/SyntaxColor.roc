@@ -5,9 +5,10 @@
 ##
 ## A language is a value of `Language`: its name and its lexer, a function from
 ## the text to spans that cover every byte once. Each language's lexer is a
-## module of its own (RocSyntax, ShaleSyntax, JsSyntax, ZigSyntax), and another
+## module of its own (RocSyntax, ShaleSyntax, JsSyntax, ZigSyntax, CSyntax), and another
 ## language plugs in as one more module and one more value here.
 import Span
+import CSyntax
 import JsSyntax
 import RocSyntax
 import ShaleSyntax
@@ -33,6 +34,11 @@ SyntaxColor :: [].{
 	## Zig, as its own tokenizer reads it, with the classes the others use.
 	zig : SyntaxColor.Language
 	zig = { name: "zig", spans: ZigSyntax.spans }
+
+	## C, its preprocessor's directives as keywords, with the classes the others
+	## use.
+	c : SyntaxColor.Language
+	c = { name: "c", spans: CSyntax.spans }
 
 	## The spans of `text` in `language`, covering every byte once, in order.
 	spans : SyntaxColor.Language, Str -> List(Span)
@@ -253,6 +259,11 @@ hostile_pieces = [
 	"@",
 	"@\"",
 	"0x1p-",
+	"#define",
+	"<",
+	"L'",
+	"1'",
+	"\\\n",
 ]
 
 ## Every text of two hostile pieces, and some longer ones.
@@ -284,8 +295,9 @@ is_faithful = |language, text|
 	Span.is_cover(SyntaxColor.spans(language, text), text.count_utf8_bytes())
 		and without_spans(SyntaxColor.html(language, text)) == SyntaxColor.escaped_text(text)
 
-expect hostile_texts.len() == 1692
+expect hostile_texts.len() == 2127
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.roc, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.shale, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.js, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.zig, text))
+expect hostile_texts.all(|text| is_faithful(SyntaxColor.c, text))

@@ -42,8 +42,11 @@ const LINTS = {
 }
 
 -- The counts that aren't zero, `recipe/check`: roc-apps' baseline for
--- syntax_color on 2026-11-20, the day it moved out.
+-- syntax_color on 2026-11-20, the day it moved out, and the one C's name added.
 const HELD = {
+  -- SyntaxColor.c, named for its language as SyntaxColor.js and .zig are:
+  -- C's name is one letter (2026-11-20, with the C lexer).
+  ["hunt_names/short_name"] = 1,
   ["check_errors/number_fallback"] = 1,
   ["check_families/twin_name"] = 3,
   ["check_stacking/wide string"] = 15,

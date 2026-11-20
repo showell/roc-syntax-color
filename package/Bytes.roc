@@ -51,6 +51,48 @@ Bytes :: [].{
 		$end
 	}
 
+	## The end of a string quoted by `quote` whose text starts at `at`, as
+	## JavaScript and C read one: just past its closing quote, or where its line or
+	## the text ends. A backslash keeps the byte after it, a newline too, so a
+	## line a backslash ends continues the string.
+	continued_quoted_end : List(U8), { at : U64, quote : U8 } -> U64
+	continued_quoted_end = |bytes, { at, quote }| {
+		var $at = at
+		var $end = bytes.len()
+		while $at < bytes.len() {
+			byte = Bytes.byte_at(bytes, $at)
+			if byte == quote {
+				$end = $at + 1
+				$at = bytes.len()
+			} else if byte == '\n' {
+				$end = $at
+				$at = bytes.len()
+			} else if byte == '\\' {
+				$at = $at + 2
+			} else {
+				$at = $at + 1
+			}
+		}
+		U64.min($end, bytes.len())
+	}
+
+	## The end of a block comment whose text starts at `at`: past its `*/`, or the
+	## end of the text.
+	block_comment_end : List(U8), U64 -> U64
+	block_comment_end = |bytes, at| {
+		var $at = at
+		var $end = bytes.len()
+		while $at < bytes.len() {
+			if Bytes.byte_at(bytes, $at) == '*' and Bytes.byte_at(bytes, $at + 1) == '/' {
+				$end = $at + 2
+				$at = bytes.len()
+			} else {
+				$at = $at + 1
+			}
+		}
+		$end
+	}
+
 	is_digit : U8 -> Bool
 	is_digit = |byte| byte >= '0' and byte <= '9'
 
@@ -82,6 +124,10 @@ expect Bytes.quoted_end("a\\'b'c".to_utf8(), { at: 0, quote: '\'' }) == 5
 expect Bytes.quoted_end("ab\nc'".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect Bytes.quoted_end("a\\".to_utf8(), { at: 0, quote: '\'' }) == 2
 expect Bytes.quoted_end("a\\\nb'".to_utf8(), { at: 0, quote: '\'' }) == 2
+expect Bytes.continued_quoted_end("a\\\nb\"c".to_utf8(), { at: 0, quote: '"' }) == 5
+expect Bytes.continued_quoted_end("a\\".to_utf8(), { at: 0, quote: '"' }) == 2
+expect Bytes.block_comment_end("a*/b".to_utf8(), 0) == 3
+expect Bytes.block_comment_end("a*".to_utf8(), 0) == 2
 expect ['0', '9'].all(Bytes.is_digit) and !['/', ':', 'a'].any(Bytes.is_digit)
 expect [' ', '\t', '\r', '\n'].all(Bytes.is_space) and !['a', 0x0B, 0x0C, 0].any(Bytes.is_space)
 expect ['a', 'z', 'A', 'Z', '_'].all(Bytes.is_ascii_word_start) and ![
