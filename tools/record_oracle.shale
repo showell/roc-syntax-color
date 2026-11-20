@@ -1,9 +1,10 @@
 -- budget: steps=400000000 arena_bytes=1500000000 reads=20000 read_bytes=400000000 output_bytes=200000 call_bytes=40000000
--- This records the oracle that syntax_color is held to: what today's two
+-- This records the oracle that the package is held to: what today's two
 -- coloring scripts make of every sample they color. It runs from a roc-apps
--- checkout, and needs the books book's checkout and the Shale cookbook:
+-- checkout, with this repository beside it under the `repos:` mount, and needs
+-- the books book's checkout and the Shale cookbook:
 --
---   cd <roc-apps checkout> && shale syntax_color/tools/record_oracle.shale
+--   cd <roc-apps checkout> && shale repos:roc-syntax-color/tools/record_oracle.shale
 --
 -- The Roc samples are colored by roc-apps' canvas_apps/safari/tutorial/
 -- color_roc.shale, and the Shale samples
@@ -11,7 +12,7 @@
 -- what it needs, so nothing in the checkout changes but build/, which the
 -- tutorial's own build.shale rewrites first.
 --
--- It writes three files to syntax_color/oracle/, a sample a line:
+-- It writes three files to this repository's oracle/, a sample a line:
 --   roc_blocks.jsonl   every ```roc fence of the Safari book, colored alone;
 --   roc_files.jsonl    every Roc file those fences quote, colored whole;
 --   shale_files.jsonl  every cookbook recipe, the books book's Shale files and
@@ -23,7 +24,7 @@
 -- away and its five escapes undone, which both scripts check holds. The outcome
 -- is `colored`, or `plain` for a Roc block color_roc left uncolored (its reason
 -- follows), or `refused` for a Shale file color_shale gave no page.
-const ORACLE = "syntax_color/oracle"
+const ORACLE = "repos:roc-syntax-color/oracle"
 const TUTORIAL_BUILD = "canvas_apps/safari/tutorial/build.shale"
 const EXPANDED = "canvas_apps/safari/tutorial/build/tutorial.md"
 const NOTES = "canvas_apps/safari/tutorial/build/blocks.jsonl"

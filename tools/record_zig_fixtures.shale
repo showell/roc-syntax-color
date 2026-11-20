@@ -3,17 +3,18 @@
 -- Zig before the package did, so the fixtures are the package's own answers
 -- for real Zig on the box, each read by eye before it was committed;
 -- tools/verify.shale then holds the package to them. Run it from a roc-apps
--- checkout, with Shale, roc-chat, zig-webbox and zig-metal-unikernel beside it
--- under the `repos:` mount, after tools/verify.shale has built the harness:
+-- checkout (the book builder's host is roc-apps'), with this repository,
+-- Shale, roc-chat, zig-webbox and zig-metal-unikernel beside it under the
+-- `repos:` mount, after tools/verify.shale has built the harness here:
 --
---   cd <roc-apps checkout> && shale syntax_color/tools/record_zig_fixtures.shale
+--   cd <roc-apps checkout> && shale repos:roc-syntax-color/tools/record_zig_fixtures.shale
 --
 -- A fixture holds the file's text as it was recorded, so the files beside
 -- roc-apps can move on without moving the fixtures. Re-record only for a
 -- deliberate change to the Zig lexer, and read every sample that moved in
 -- the diff.
-const TOOL = ".zig-cache/syntax_color/harness"
-const OUT = "syntax_color/oracle/zig_files.jsonl"
+const TOOL = "repos:roc-syntax-color/.zig-cache/syntax_color/harness"
+const OUT = "repos:roc-syntax-color/oracle/zig_files.jsonl"
 const MARK = "<!-- syntax_color answer -->\n"
 const WANT = "roc-pin: syntax_color's harness, built by its gate"
 

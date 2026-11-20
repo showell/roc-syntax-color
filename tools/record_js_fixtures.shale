@@ -3,15 +3,16 @@
 -- colored JavaScript before the package did, so the fixtures are the
 -- package's own answers for real JavaScript in roc-apps, each read by eye
 -- before it was committed; tools/verify.shale then holds the package to them.
--- Run it from a roc-apps checkout, after tools/verify.shale has built the
--- harness:
+-- The files are roc-apps', so it runs from a roc-apps checkout, with this
+-- repository beside it under the `repos:` mount, after tools/verify.shale has
+-- built the harness here:
 --
---   cd <roc-apps checkout> && shale syntax_color/tools/record_js_fixtures.shale
+--   cd <roc-apps checkout> && shale repos:roc-syntax-color/tools/record_js_fixtures.shale
 --
 -- Re-record only for a deliberate change to the JavaScript lexer, and read
 -- every sample that moved in the diff.
-const TOOL = ".zig-cache/syntax_color/harness"
-const OUT = "syntax_color/oracle/js_files.jsonl"
+const TOOL = "repos:roc-syntax-color/.zig-cache/syntax_color/harness"
+const OUT = "repos:roc-syntax-color/oracle/js_files.jsonl"
 const MARK = "<!-- syntax_color answer -->\n"
 const WANT = "roc-pin: syntax_color's harness, built by its gate"
 

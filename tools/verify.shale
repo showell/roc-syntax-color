@@ -1,12 +1,13 @@
 -- budget: steps=600000000 arena_bytes=2000000000 read_bytes=400000000 call_bytes=40000000 output_bytes=200000
--- This is syntax_color's gate: every check of the package, in one run. From a
--- roc-apps checkout's root, whose prelude gives the pinned Roc:
+-- This is roc-syntax-color's gate: every check of the package, in one run.
+-- From the repository's root:
 --
---   cd <roc-apps checkout> && shale syntax_color/tools/verify.shale
+--   shale tools/verify.shale
 --
 -- It prints a line a check, PASS or FAIL with its numbers, and fails unless
 -- every one passed:
---   - `roc fmt --check` over the folder's Roc;
+--   - `roc fmt --check` over the repository's Roc, by the Roc that roc-version
+--     pins (tools:roc-<pin>/roc);
 --   - `roc check` of the harness, which reaches every module, with no error and
 --     no warning;
 --   - `roc test`, its count held to the `expect` lines in the package, and
@@ -26,10 +27,10 @@
 -- also colored alone, with no file around them, and ALONE_MATCHES holds how
 -- many of those come out the same, since a block cut from a function's body
 -- reads differently alone.
-const WANT = "roc-pin: roc-apps' pinned nightly, for syntax_color's gate"
-const HARNESS_DIR = "syntax_color/harness"
-const PACKAGE_DIR = "syntax_color/package"
-const ORACLE = "syntax_color/oracle"
+const WANT = "roc-pin: the pinned nightly, for roc-syntax-color's gate"
+const HARNESS_DIR = "harness"
+const PACKAGE_DIR = "package"
+const ORACLE = "oracle"
 const WORK = ".zig-cache/syntax_color"
 const MARK = "<!-- syntax_color answer -->\n"
 const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
@@ -244,8 +245,24 @@ function count_expects()
   return n
 end
 
-local roc = pinned_roc("syntax_color verify")
-local f = run({roc, "fmt", "--check", "package", "harness"}, {cwd = "syntax_color", timeout_ms = 60000, tail = 20, want = WANT})
+-- **THE PINNED ROC**: tools:roc-<pin>/roc, roc-version naming the pin (pins
+-- live side by side; the PATH's may be another project's). A missing pin file,
+-- a missing binary and a binary whose `roc version` isn't the pin each stop the
+-- run.
+function pinned_roc()
+  if not exists("roc-version") then fail("verify: no roc-version: run from the repository's root") end
+  local pin = trim(read("roc-version"))
+  local at = "tools:roc-" .. pin .. "/roc"
+  if not exists(at) then fail("verify: no " .. at .. ": install the pinned nightly " .. pin .. " at ~/tools/roc-" .. pin .. "/") end
+  local said = run({real(at), "version"}, {timeout_ms = 30000, whole = 4000, want = WANT})
+  if trim(said.out) ~= "Roc compiler version " .. pin then
+    fail("verify: " .. at .. " is " .. trim(said.out) .. ", not " .. pin)
+  end
+  return real(at)
+end
+
+local roc = pinned_roc()
+local f = run({roc, "fmt", "--check", "package", "harness"}, {cwd = ".", timeout_ms = 60000, tail = 20, want = WANT})
 say(f.code == 0, "roc fmt --check package harness" .. (f.code == 0 and "" or (": " .. trim(f.out))))
 
 local c = run({roc, "check", "main.roc"}, {cwd = HARNESS_DIR, timeout_ms = 120000, whole = 400000, want = WANT})
