@@ -6,6 +6,8 @@
 --
 -- It prints a line a check, PASS or FAIL with its numbers, and fails unless
 -- every one passed:
+--   - Shale's Roc recipes over every .roc file git tracks, each count held
+--     exact (tools/lints.shale, whose lines this takes);
 --   - `roc fmt --check` over the repository's Roc, by the Roc that roc-version
 --     pins (tools:roc-<pin>/roc);
 --   - `roc check` of the harness, which reaches every module, with no error and
@@ -259,6 +261,23 @@ function pinned_roc()
     fail("verify: " .. at .. " is " .. trim(said.out) .. ", not " .. pin)
   end
   return real(at)
+end
+
+-- Shale's Roc recipes: tools/lints.shale prints a `PASS` or `FAIL` line a
+-- recipe, each a line here. A run that printed none, or failed with every
+-- line passing, is a line of its own.
+local lints = run({"shale", "tools/lints.shale"}, {cwd = ".", timeout_ms = 300000, tail = 60})
+local lint_lines = 0
+local lint_failed = false
+for l in lines(lints.out) do
+  if starts_with(l, "PASS  ") or starts_with(l, "FAIL  ") then
+    lint_lines = lint_lines + 1
+    if starts_with(l, "FAIL  ") then lint_failed = true end
+    say(starts_with(l, "PASS  "), sub(l, 7))
+  end
+end
+if lint_lines == 0 or (lints.code ~= 0 and not lint_failed) then
+  say(false, "tools/lints.shale exited " .. lints.code .. ": " .. trim(lints.out))
 end
 
 local roc = pinned_roc()

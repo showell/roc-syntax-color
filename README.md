@@ -56,8 +56,9 @@ more value beside those.
 
     shale tools/verify.shale
 
-runs `roc fmt --check`, `roc check`, `roc test` and an oracle of real samples,
-each colored byte for byte as recorded. [DESIGN.md](DESIGN.md) says how the
+runs Shale's Roc quality recipes (`tools/lints.shale`), `roc fmt --check`,
+`roc check`, `roc test` and an oracle of real samples, each colored byte for
+byte as recorded. [DESIGN.md](DESIGN.md) says how the
 lexers read each language, what the oracle holds and where it stands.
 
 It began in [roc-apps](https://github.com/showell/roc-apps), where the Safari

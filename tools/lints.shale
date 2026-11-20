@@ -1,0 +1,130 @@
+-- **SHALE'S ROC RECIPES OVER EVERY .roc FILE GIT TRACKS, EACH COUNT HELD
+-- EXACT**: the parse recipes roc-apps' tools/quality.shale ran over this
+-- package while it was roc-apps' syntax_color/, with the same arguments, and
+-- the counts that its baseline (tools/quality_baseline.tsv) held for it when
+-- it moved out. tools/verify.shale runs this and takes its lines; on its own,
+-- from the repository's root:
+--
+--   shale tools/lints.shale
+--
+-- It prints one line a recipe, `PASS` or `FAIL` with its counts, and exits
+-- nonzero when any failed. A recipe reads `**/*.roc`, and the files it read
+-- are held to the number git tracks, so a build's output never enters a
+-- count and a file the glob missed never leaves one.
+--
+-- A count is held exactly, never "at most": HELD names each that isn't zero.
+-- One that falls is a fix, and moves HELD down in the same commit; one that
+-- rises is a new finding, to fix rather than hold. The typed counts
+-- roc-apps kept for this folder (rewrite_method_calls' `rewritable` 2 and
+-- roc-types' `unreached` 1, from roc-types over the harness) are not here:
+-- they need roc-types, which this gate doesn't run.
+--
+-- budget: steps=400000000 arena_bytes=1000000000 output_bytes=1000000
+
+const LINTS = {
+  {recipe = "hunt_names", args = {}, checks = {
+    "state_effect", "question", "vague", "name_type", "negative", "noun_effect", "command_tense",
+    "mixed_tense", "container", "preposition_split", "short_name", "worker_name", "stacked_preposition",
+    "taken_word", "bare_participle", "phrase_name", "singular_list", "world_verb", "where_name",
+    "stale_doc_name",
+  }},
+  {recipe = "check_stacking", args = {}, checks = {"to stack", "to unstack", "long", "wide string"}},
+  {recipe = "find_extra_parens", args = {}, checks = {"paren_if", "wrapped_body", "else_block", "lambda_if"}},
+  {recipe = "check_errors", args = {}, checks = {"error_alias", "optional_tag", "set_fallback", "placeholder", "number_fallback"}},
+  {recipe = "find_deep_calls", args = {"min=4"}, checks = {"nested"}},
+  {recipe = "find_unused_imports", args = {}, checks = {"unused_import"}},
+  {recipe = "check_name_types", args = {}, checks = {"name_type", "bare_beside_unit", "no_value"}},
+  {recipe = "check_families", args = {}, checks = {"family", "twin_name"}},
+  {recipe = "find_unclear_names", args = {}, checks = {"pure_mutator", "abbreviation", "module_doc"}},
+  {recipe = "check_boundaries", args = {}, checks = {
+    "single", "fixed", "entry", "constant", "bool_param", "dead", "unused_api", "same_branches",
+  }},
+}
+
+-- The counts that aren't zero, `recipe/check`: roc-apps' baseline for
+-- syntax_color on 2026-11-20, the day it moved out.
+const HELD = {
+  ["check_errors/number_fallback"] = 1,
+  ["check_families/twin_name"] = 3,
+  ["check_stacking/wide string"] = 15,
+}
+
+-- The number a summary gives for a check: "check N", or "N check" for
+-- check_stacking's "N to stack". Nil when the summary doesn't name it.
+function count_in_summary(summary, label)
+  local after = re_find(summary, "(?:^|[;:,] )" .. label .. " ([0-9]+)")
+  if after ~= nil then return tonumber(after.group) end
+  local before = re_find(summary, "(?:^|[;:,] )([0-9]+) " .. label .. "(?:,|$)")
+  if before ~= nil then return tonumber(before.group) end
+  return nil
+end
+
+-- The recipe's own lines: not Shale's `──` reports or the `called from`
+-- lines under a stop.
+function own_lines(out)
+  local kept = {}
+  for l in lines(out) do
+    if not starts_with(l, "──") and not starts_with(l, "   ") and trim(l) ~= "" then push(kept, l) end
+  end
+  return kept
+end
+
+function lint_argv(lint)
+  local argv = {"shale", "--budget", "steps=40000000000", real("cookbook:roc/" .. lint.recipe .. ".shale"), "glob=**/*.roc"}
+  for a in lint.args do push(argv, a) end
+  return argv
+end
+
+-- The problems with one recipe's run, and what it counted: `{wrong, said}`.
+function judge_lint(lint, r, tracked)
+  local wrong = {}
+  local said = {}
+  local own = own_lines(r.out)
+  if #own == 0 then return {wrong = {lint.recipe .. " printed nothing of its own: " .. trim(r.out)}, said = said} end
+  local summary = own[#own]
+  for l in own do
+    if starts_with(l, "refused: ") or starts_with(l, "not reached by ") then push(wrong, l) end
+  end
+  local read_files = re_find(summary, "([0-9]+) files")
+  if read_files == nil then
+    push(wrong, "no file count in its summary: " .. summary)
+  elseif tonumber(read_files.group) ~= tracked then
+    push(wrong, "it read " .. read_files.group .. " files, and git tracks " .. tracked)
+  end
+  for c in lint.checks do
+    local got = count_in_summary(summary, c)
+    local want = get(HELD, lint.recipe .. "/" .. c, 0)
+    if got ~= want then push(wrong, c .. " is " .. tostring(got) .. ", held at " .. want) end
+    if want ~= 0 then push(said, c .. " " .. want) end
+  end
+  return {wrong = wrong, said = said}
+end
+
+local tracked = 0
+for f in lines(trim(must(run({"git", "ls-files", "*.roc"}, {cwd = ".", timeout_ms = 30000, whole = 1000000})).out)) do
+  if f ~= "" then tracked = tracked + 1 end
+end
+local failed = 0
+for lint in LINTS do
+  -- `want`: a gate recipe exits nonzero on a finding, and its counts say which.
+  local r = run(lint_argv(lint), {cwd = ".", timeout_ms = 120000, whole = 4000000, want = "any"})
+  local j = judge_lint(lint, r, tracked)
+  if #j.wrong == 0 then
+    print("PASS  roc recipe " .. lint.recipe .. ": " .. (#j.said == 0 and "all at zero" or ("zero but " .. join(j.said, ", "))) .. " (" .. tracked .. " files, " .. r.ms .. " ms)")
+  else
+    failed = failed + 1
+    print("FAIL  roc recipe " .. lint.recipe .. ": " .. join(j.wrong, "; "))
+  end
+end
+for key in keys(HELD) do
+  local parts = split(key, "/")
+  local named = false
+  for lint in LINTS do
+    if lint.recipe == parts[1] and has_item(lint.checks, parts[2]) then named = true end
+  end
+  if not named then
+    failed = failed + 1
+    print("FAIL  HELD names " .. key .. ", which no recipe here counts")
+  end
+end
+if failed > 0 then fail("lints: " .. failed .. " failed") end

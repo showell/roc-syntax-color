@@ -11,7 +11,8 @@ step. This file adds only what is particular here.
 - **The gate** is `shale tools/verify.shale`, from the root. A change is done
   when it prints `verify: N of N passed`. Its counts (`EXPECTS`, `CORPORA`,
   `ALONE_MATCHES`) are held exact: move one only with the change that moves
-  it, and say why in the commit.
+  it, and say why in the commit. So are the Roc recipes' counts, in
+  `tools/lints.shale`'s `HELD`, which came from roc-apps' quality baseline.
 - **The Roc is the pin** in `roc-version`, at `tools:roc-<pin>/roc`. It moves
   with roc-apps' pin, since roc-apps and roc-chat import this package.
 - **The oracle is recorded, not edited.** The `tools/record_*.shale` scripts
