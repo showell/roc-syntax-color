@@ -35,6 +35,7 @@ RocSyntax :: [].{
 			at: 0,
 			out: [],
 			frames: [],
+			first_interpolation: NoInterpolation,
 			before: Start,
 			place: LineStart,
 			header: NoCodeYet,
@@ -56,6 +57,7 @@ State : {
 	at : U64,
 	out : List(Span),
 	frames : List(Frame),
+	first_interpolation : FirstInterpolation,
 	before : Before,
 	place : [LineStart, MidLine],
 	header : Header,
@@ -78,6 +80,12 @@ Frame : [
 ]
 
 StringKind : [Quoted, Multiline]
+
+## Where the first string interpolation among the frames is, kept as the
+## frames change, so a newline, which ends every interpolation, cuts the
+## frames there without scanning them: a scan at each line made a text of
+## many open brackets quadratic.
+FirstInterpolation : [NoInterpolation, At(U64)]
 
 ## What the token before was, as far as the next one cares.
 Before : [
@@ -143,7 +151,11 @@ code_step = |bytes, state| {
 		{
 			..emit(state, { class: Plain, end: at + 1 }),
 			place: LineStart,
-			frames: without_interpolations(state.frames),
+			frames: match state.first_interpolation {
+				At(index) => state.frames.take_first(index)
+				NoInterpolation => state.frames
+			},
+			first_interpolation: NoInterpolation,
 		}
 	} else if byte == ' ' or byte == '\t' or byte == '\r' {
 		emit(state, { class: Plain, end: at + 1 })
@@ -316,11 +328,22 @@ symbol_step = |bytes, { state, byte, next }| {
 	} else if byte == '}' {
 		match state.frames.last() {
 			Ok(Interpolation(kind)) => {
-				..plain(at + 1, Opener),
-				frames: state.frames.drop_last(1),
-				mode: InString(kind),
+				frames = state.frames.drop_last(1)
+				{
+					..plain(at + 1, Opener),
+					first_interpolation: first_kept(state.first_interpolation, frames),
+					frames,
+					mode: InString(kind),
+				}
 			}
-			Ok(_) => { ..plain(at + 1, Value), frames: state.frames.drop_last(1) }
+			Ok(_) => {
+				frames = state.frames.drop_last(1)
+				{
+					..plain(at + 1, Value),
+					first_interpolation: first_kept(state.first_interpolation, frames),
+					frames,
+				}
+			}
 			Err(ListWasEmpty) => plain(at + 1, Value)
 		}
 	} else if byte == '(' {
@@ -328,9 +351,19 @@ symbol_step = |bytes, { state, byte, next }| {
 	} else if byte == '[' {
 		{ ..plain(at + 1, Opener), frames: state.frames.append(Square) }
 	} else if byte == ')' {
-		{ ..plain(at + 1, Value), frames: without_last(state.frames, Paren) }
+		frames = without_last(state.frames, Paren)
+		{
+			..plain(at + 1, Value),
+			first_interpolation: first_kept(state.first_interpolation, frames),
+			frames,
+		}
 	} else if byte == ']' {
-		{ ..plain(at + 1, Value), frames: without_last(state.frames, Square) }
+		frames = without_last(state.frames, Square)
+		{
+			..plain(at + 1, Value),
+			first_interpolation: first_kept(state.first_interpolation, frames),
+			frames,
+		}
 	} else if byte == '|' and next == '>' {
 		plain(at + 2, Operator)
 	} else if byte == '|' {
@@ -365,9 +398,13 @@ bar_step : State, State -> State
 bar_step = |state, passed|
 	match state.frames.last() {
 		Ok(LambdaArguments) => {
-			..passed,
-			frames: state.frames.drop_last(1),
-			before: BarClose,
+			frames = state.frames.drop_last(1)
+			{
+				..passed,
+				first_interpolation: first_kept(state.first_interpolation, frames),
+				frames,
+				before: BarClose,
+			}
 		}
 		_ =>
 			if state.before == Value {
@@ -411,6 +448,10 @@ string_step = |bytes, { state, kind }| {
 			..emit(text, { class: Plain, end: stop + 2 }),
 			mode: Code,
 			before: Opener,
+			first_interpolation: match state.first_interpolation {
+				NoInterpolation => At(state.frames.len())
+				At(_) => state.first_interpolation
+			},
 			frames: state.frames.append(Interpolation(kind)),
 		}
 	}
@@ -495,19 +536,12 @@ without_last = |frames, frame|
 		frames
 	}
 
-## The frames outside any string's interpolation, which a newline ends: a
-## string never runs past its line.
-without_interpolations : List(Frame) -> List(Frame)
-without_interpolations = |frames|
-	match frames.find_first_index(|frame| is_interpolation(frame)) {
-		Ok(index) => frames.take_first(index)
-		Err(NotFound) => frames
-	}
-
-is_interpolation : Frame -> Bool
-is_interpolation = |frame| match frame {
-	Interpolation(_) => Bool.True
-	_ => Bool.False
+## The first interpolation, once the frames are `frames`: gone when they no
+## longer reach it, since a frame is only ever closed from the end.
+first_kept : FirstInterpolation, List(Frame) -> FirstInterpolation
+first_kept = |first, frames| match first {
+	At(index) if index >= frames.len() => NoInterpolation
+	_ => first
 }
 
 ## The index of the first byte at or after `at` that isn't a space or a tab.
