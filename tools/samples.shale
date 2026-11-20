@@ -1,0 +1,60 @@
+-- tools/samples.shale: how the oracle's samples are read, the one home of it
+-- for tools/verify.shale and tools/record_roc_fixtures.shale, which load it
+-- with `use("./samples.shale")`.
+
+const ORACLE = "oracle"
+const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
+
+function unescaped(html)
+  local s = join(split(html, "&lt;"), "<")
+  s = join(split(s, "&gt;"), ">")
+  s = join(split(s, "&quot;"), "\"")
+  s = join(split(s, "&#39;"), "'")
+  return join(split(s, "&amp;"), "&")
+end
+
+-- A sample's text: its HTML with the spans taken away and the escapes undone,
+-- which every recording checks holds.
+function text_of(html)
+  return unescaped(re_replace(html, OUR_SPANS, ""))
+end
+
+function read_corpus(name)
+  local records = {}
+  for l in lines(read(ORACLE .. "/" .. name .. ".jsonl")) do
+    if trim(l) ~= "" then push(records, json_read(l)) end
+  end
+  return records
+end
+
+-- The byte where each line of `text` starts, from 0.
+function line_starts(text)
+  local starts = {}
+  local at = 0
+  for l in split(text, "\n") do
+    push(starts, at)
+    at = at + #l + 1
+  end
+  return starts
+end
+
+-- The harness's SPEC for a block's note, against its file's text.
+function block_spec(note, file_text)
+  local starts = line_starts(file_text)
+  local ls = split(file_text, "\n")
+  local spec = {}
+  for part in note.parts do
+    if has_key(part, "cut") then
+      push(spec, "T " .. part.cut)
+    else
+      local n = part.from
+      while n <= part.to do
+        local last = #ls[n]
+        if n == part.to then last = part.end_col - 1 end
+        push(spec, "R " .. (starts[n] + part.indent) .. " " .. (starts[n] + last))
+        n = n + 1
+      end
+    end
+  end
+  return join(spec, "\n")
+end

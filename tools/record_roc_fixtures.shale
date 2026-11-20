@@ -1,0 +1,68 @@
+-- budget: steps=400000000 arena_bytes=1500000000 call_bytes=40000000
+-- This records the Roc samples' answers, oracle/roc_files.jsonl and
+-- oracle/roc_blocks.jsonl, as the package's own, after a deliberate change to
+-- the Roc lexer. The samples' texts and notes stay as they are, frozen: each
+-- file is colored whole again by the harness, and each block as it reads in
+-- its file, as tools/verify.shale asks for them. Read every sample that moved
+-- in the diff before committing it; tools/verify.shale then holds the package
+-- to them. From the repository's root, after tools/verify.shale has built the
+-- harness:
+--
+--   shale tools/record_roc_fixtures.shale
+--
+-- The Roc samples were first recorded from the colorer the package replaced
+-- (DESIGN.md, "Where the samples came from"), and oracle/known_mismatches.txt
+-- names where they differed. Once the package's own answers are recorded those
+-- lines name nothing that differs, so this drops them from the file and says
+-- which; the Shale lines stay. The count of blocks that color the same alone
+-- may move too: verify says the new one, for its ALONE_MATCHES.
+use("./samples.shale")
+
+const TOOL = ".zig-cache/syntax_color/harness"
+const MARK = "<!-- syntax_color answer -->\n"
+const WANT = "roc-pin: roc-syntax-color's harness, built by its gate"
+
+if not exists(TOOL) then fail("record_roc_fixtures: no harness at " .. TOOL .. ": run tools/verify.shale first") end
+local files = read_corpus("roc_files")
+local blocks = read_corpus("roc_blocks")
+local texts = {}
+local argv = {real(TOOL)}
+for r in files do
+  texts[r.name] = text_of(r.html)
+  push(argv, "roc")
+  push(argv, texts[r.name])
+end
+for r in blocks do
+  if not has_key(texts, r.note.path) then fail("record_roc_fixtures: " .. r.name .. " quotes " .. r.note.path .. ", which roc_files.jsonl doesn't hold") end
+  push(argv, "roc-block")
+  push(argv, texts[r.note.path])
+  push(argv, block_spec(r.note, texts[r.note.path]))
+end
+local out = must(run(argv, {timeout_ms = 120000, whole = 60000000, want = WANT}))
+local answers = drop(split(out.out, MARK), 1)
+if #answers ~= #files + #blocks then fail("record_roc_fixtures: " .. (#files + #blocks) .. " samples got " .. #answers .. " answers") end
+
+local file_lines = {}
+local moved = 0
+for i = 1, #files do
+  if answers[i] ~= files[i].html then moved = moved + 1 end
+  push(file_lines, json_write({name = files[i].name, outcome = "reviewed", html = answers[i]}))
+end
+local block_lines = {}
+for i = 1, #blocks do
+  local html = answers[#files + i]
+  if html ~= blocks[i].html then moved = moved + 1 end
+  if text_of(html) ~= text_of(blocks[i].html) then fail("record_roc_fixtures: " .. blocks[i].name .. "'s text changed: the harness and the note disagree") end
+  push(block_lines, json_write({name = blocks[i].name, outcome = "reviewed", html = html, note = blocks[i].note}))
+end
+replace(ORACLE .. "/roc_files.jsonl", join(file_lines, "\n") .. "\n")
+replace(ORACLE .. "/roc_blocks.jsonl", join(block_lines, "\n") .. "\n")
+
+local kept = {}
+local dropped = {}
+for l in lines(read(ORACLE .. "/known_mismatches.txt")) do
+  if starts_with(l, "roc_files\t") or starts_with(l, "roc_blocks\t") then push(dropped, split(l, "\t")[2]) else push(kept, l) end
+end
+if #dropped > 0 then replace(ORACLE .. "/known_mismatches.txt", join(kept, "\n") .. "\n") end
+for d in dropped do print("record_roc_fixtures: known_mismatches.txt drops " .. d) end
+print("record_roc_fixtures: " .. #files .. " files and " .. #blocks .. " blocks, " .. moved .. " answers moved")

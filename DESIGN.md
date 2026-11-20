@@ -14,8 +14,8 @@ after a `.` is a field, never a keyword or a type. Its primitive types (`u8`,
 `usize`, `type`, `anytype`) are types, and its builtins (`@import`) are
 keywords. Shale's follows Shale's own lexer (`src/script/lex.zig` in the
 shale repository). Roc's has no lexer of record to
-follow, since color_roc reads roc-ast's tree, so RocSyntax keeps the little it
-needs to agree with the tree: which brackets are open and what the token
+follow, and its samples were first recorded from a colorer that read roc-ast's
+tree, so RocSyntax keeps the little it needs to agree with the tree: which brackets are open and what the token
 before was. That tells a top-level definition's name from a local's, and a
 function's body from a record. `RocSyntax.roc`'s header says the rules.
 
@@ -25,14 +25,20 @@ function's body from a record. `RocSyntax.roc`'s header says the rules.
 
 It runs `roc fmt --check`, `roc check` and `roc test` (its count held exact),
 builds `harness/main.roc` on Roc's echo platform, and holds the harness's
-answer for every sample in `oracle/` to what today's scripts made of it, byte
-for byte. A sample known to differ is named in `oracle/known_mismatches.txt`
-with its reason, and the list is held exact both ways.
+answer for every sample in `oracle/` to what was recorded, byte for byte. A
+sample known to differ is named in `oracle/known_mismatches.txt` with its
+reason, and the list is held exact both ways.
 
-`tools/record_oracle.shale` records `oracle/` again, from a roc-apps checkout
+The Roc, JavaScript and Zig samples are the package's own answers, frozen:
+re-record them only after a deliberate change to a lexer, and read every
+sample that moved in the diff. `tools/record_roc_fixtures.shale` colors the
+Roc samples' frozen texts again, from this checkout;
+`tools/record_js_fixtures.shale` and `tools/record_zig_fixtures.shale` read
+their files from a roc-apps checkout with this one beside it. The Shale
+samples are what the Shale cookbook's `color_shale.shale` makes of them, and
+`tools/record_shale_oracle.shale` records them again, from a roc-apps checkout
 with this repository, the books book's checkout and the Shale cookbook beside
-it. Its header says what each file holds. Re-record only when today's scripts change, and
-read the diff.
+it. Each recorder's header says what it writes.
 
 A header's keywords follow Roc's tokenizer at the pin: `app`, `hosted`,
 `module`, `package` and `platform` start one, and in it those words and a
@@ -40,19 +46,24 @@ platform header's sections, `requires`, `exposes`, `packages`, `provides`,
 `hosted` and `targets`, are keywords. The header runs to the next line that
 starts at its first column.
 
-## Status (2026-11-16)
+## Where the samples came from
 
-- Every Safari Roc block (223) and every file they quote (76) matches
-  color_roc, but where the package colors what color_roc leaves plain, each
-  named in `oracle/known_mismatches.txt`:
-  - web.roc, whole, which color_roc leaves plain because roc-ast's spans for
-    its app header overlap;
-  - a qualified type in a lambda's unwrap pattern, `|Route.SegmentIndex.(n)|`,
-    a type as `|Route.(n)|` is (four files and one block).
-- Colored alone, without their files, 217 of the 223 blocks match. Four of the
-  others are cut from a function's body, whose `name = ...` lines read as
-  top-level definitions alone; the other two are web.roc's header and the
-  unwrap pattern above.
+The Roc samples are every Roc block of the Safari book (223) and every file
+those blocks quote (76). They were first recorded from roc-apps'
+`color_roc.shale`, the colorer this package replaced, which read roc-ast's
+tree. The package matches those recordings byte for byte except in seven
+samples, where it colors what color_roc left plain: web.roc's app header,
+whole and in one block, whose spans roc-ast gave overlapping, and a qualified
+type in a lambda's unwrap pattern, `|Route.SegmentIndex.(n)|`, in four files
+and one block. On 2026-11-20 color_roc retired, and the samples were recorded
+again as the package's own answers, read by eye; those seven are all that
+moved.
+
+## Status (2026-11-20)
+
+- Colored alone, without their files, 219 of the 223 Roc blocks match how they
+  read in their files. The other four are cut from a function's body, whose
+  `name = ...` lines read as top-level definitions alone.
 - 107 of 109 Shale samples match color_shale; the two others are fragments
   color_shale refuses because they fail `shale --check` alone.
 - JavaScript had no colorer before, so its 13 fixtures (`oracle/js_files.jsonl`,

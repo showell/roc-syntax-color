@@ -15,31 +15,33 @@
 --   - `roc test`, its count held to the `expect` lines in the package, and
 --     both to EXPECTS;
 --   - the oracle (each sample that differs is written, its first differing
---     line, to .zig-cache/syntax_color/differences.txt): each sample of oracle/*.jsonl, colored by the harness, held
---     byte for byte to what today's scripts made of it, with the samples known
---     to differ named in oracle/known_mismatches.txt, each with its reason. A
---     sample that differs and isn't named fails, and so does one named that
---     matches. Each corpus's count is held to CORPORA. JavaScript and Zig had
---     no colorer before this one, so their fixtures, oracle/js_files.jsonl and
---     oracle/zig_files.jsonl, are the package's answers read by eye
---     (tools/record_js_fixtures.shale, tools/record_zig_fixtures.shale).
+--     line, to .zig-cache/syntax_color/differences.txt): each sample of
+--     oracle/*.jsonl, colored by the harness, held byte for byte to what was
+--     recorded, with the samples known to differ named in
+--     oracle/known_mismatches.txt, each with its reason. A sample that differs
+--     and isn't named fails, and so does one named that matches. Each corpus's
+--     count is held to CORPORA. The Roc, JavaScript and Zig samples are the
+--     package's own answers, read by eye (tools/record_roc_fixtures.shale,
+--     tools/record_js_fixtures.shale, tools/record_zig_fixtures.shale); the
+--     Shale samples are the cookbook's color_shale.shale's
+--     (tools/record_shale_oracle.shale).
 --
 -- A Roc block is colored as it reads in its file: the harness colors the file
 -- and takes the lines the block's note names, as the book does. The blocks are
 -- also colored alone, with no file around them, and ALONE_MATCHES holds how
 -- many of those come out the same, since a block cut from a function's body
 -- reads differently alone.
+use("./samples.shale")
+
 const WANT = "roc-pin: the pinned nightly, for roc-syntax-color's gate"
 const HARNESS_DIR = "harness"
 const PACKAGE_DIR = "package"
-const ORACLE = "oracle"
 const WORK = ".zig-cache/syntax_color"
 const MARK = "<!-- syntax_color answer -->\n"
-const OUR_SPANS = "<span class=\"syn-[a-z]+\">|</span>"
 const ARG_BYTES = 700000
 const EXPECTS = 182
 const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13, zig_files = 13}
-const ALONE_MATCHES = 217
+const ALONE_MATCHES = 219
 
 const board = {lines = {}, failed = 0}
 
@@ -49,28 +51,6 @@ function say(ok, what)
   push(board.lines, mark .. "  " .. what)
   print(mark .. "  " .. what)
   return nil
-end
-
-function unescaped(html)
-  local s = join(split(html, "&lt;"), "<")
-  s = join(split(s, "&gt;"), ">")
-  s = join(split(s, "&quot;"), "\"")
-  s = join(split(s, "&#39;"), "'")
-  return join(split(s, "&amp;"), "&")
-end
-
--- A sample's text: its HTML with the spans taken away and the escapes undone,
--- which both of today's scripts check holds.
-function text_of(html)
-  return unescaped(re_replace(html, OUR_SPANS, ""))
-end
-
-function read_corpus(name)
-  local records = {}
-  for l in lines(read(ORACLE .. "/" .. name .. ".jsonl")) do
-    if trim(l) ~= "" then push(records, json_read(l)) end
-  end
-  return records
 end
 
 -- The known mismatches, `corpus<TAB>name<TAB>why` a line, as a set of
@@ -85,38 +65,6 @@ function known_mismatches()
     end
   end
   return known
-end
-
--- The byte where each line of `text` starts, from 0.
-function line_starts(text)
-  local starts = {}
-  local at = 0
-  for l in split(text, "\n") do
-    push(starts, at)
-    at = at + #l + 1
-  end
-  return starts
-end
-
--- The harness's SPEC for a block's note, against its file's text.
-function block_spec(note, file_text)
-  local starts = line_starts(file_text)
-  local ls = split(file_text, "\n")
-  local spec = {}
-  for part in note.parts do
-    if has_key(part, "cut") then
-      push(spec, "T " .. part.cut)
-    else
-      local n = part.from
-      while n <= part.to do
-        local last = #ls[n]
-        if n == part.to then last = part.end_col - 1 end
-        push(spec, "R " .. (starts[n] + part.indent) .. " " .. (starts[n] + last))
-        n = n + 1
-      end
-    end
-  end
-  return join(spec, "\n")
 end
 
 -- Every request, with what it must answer: {corpus, name, argv, want}.
