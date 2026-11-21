@@ -1,0 +1,5 @@
+-- Short terms this repository's Roc names may hold though no word list has
+-- them, one a line, each with its reason after `--`: the find_unclear_names
+-- recipe's `accepted=` file, added to the cookbook's
+-- cookbook/words/accepted_terms.txt (tools/lints.shale passes it).
+odin    -- the language's own name

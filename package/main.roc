@@ -6,6 +6,8 @@ package
 		CSyntax,
 		CSyntaxSpec,
 		JsSyntax,
+		OdinSyntax,
+		OdinSyntaxSpec,
 		RocSyntax,
 		ShaleSyntax,
 		Span,

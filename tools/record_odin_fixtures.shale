@@ -1,0 +1,66 @@
+-- budget: steps=200000000 arena_bytes=1000000000 call_bytes=40000000
+-- This records oracle/odin_files.jsonl, the Odin fixtures. No script colored
+-- Odin before the package did, so the fixtures are the package's own answers
+-- for real Odin, each read by eye before it was committed; tools/verify.shale
+-- then holds the package to them. Run it from this repository's root, after
+-- tools/verify.shale has built the harness:
+--
+--   shale tools/record_odin_fixtures.shale
+--
+-- The files are Odin's own, from its repository on GitHub at one commit, so
+-- they never move: Odin's tokenizer, which this package's lexer follows, the
+-- runtime's core, the C library's bindings, and code from the core library
+-- and the language's demo, chosen for what they hold (attributes, directives,
+-- polymorphic parameters, raw strings, runes, numbers in every base,
+-- quaternions). Odin is Ginger Bill's, under the zlib licence, which allows
+-- them to be quoted and kept here with their notices. A fixture holds the
+-- file's text as it was recorded. Re-record only for a deliberate change to
+-- the Odin lexer, and read every sample that moved in the diff.
+const TOOL = ".zig-cache/syntax_color/harness"
+const OUT = "oracle/odin_files.jsonl"
+const MARK = "<!-- syntax_color answer -->\n"
+const WANT = "roc-pin: syntax_color's harness, built by its gate"
+const ODIN_COMMIT = "ba3b9025f1d3751e24e0ba8314603978a28a107c"
+
+const ODIN_FILES = {
+  "core/odin/tokenizer/token.odin",
+  "core/odin/tokenizer/tokenizer.odin",
+  "base/runtime/core.odin",
+  "core/c/libc/stdio.odin",
+  "core/unicode/utf8/utf8.odin",
+  "core/container/queue/queue.odin",
+  "core/strconv/hex_float.odin",
+  "core/strconv/integers.odin",
+  "core/encoding/base64/base64.odin",
+  "core/text/regex/tokenizer/tokenizer.odin",
+  "core/text/scanner/scanner.odin",
+  "core/text/i18n/gettext.odin",
+  "examples/demo/demo.odin",
+}
+
+if not exists(TOOL) then fail("record_odin_fixtures: no harness at " .. TOOL .. ": run tools/verify.shale first") end
+local names = {}
+local texts = {}
+for f in ODIN_FILES do
+  local url = "https://raw.githubusercontent.com/odin-lang/Odin/" .. ODIN_COMMIT .. "/" .. f
+  local r = http_get(url)
+  if r.status ~= 200 then fail("record_odin_fixtures: " .. url .. " answered " .. r.status) end
+  push(names, "odin@" .. sub(ODIN_COMMIT, 1, 12) .. ":" .. f)
+  push(texts, r.body)
+end
+local argv = {real(TOOL)}
+for t in texts do
+  push(argv, "odin")
+  push(argv, t)
+end
+local r = must(run(argv, {timeout_ms = 120000, whole = 20000000, want = WANT}))
+local answers = drop(split(r.out, MARK), 1)
+if #answers ~= #names then fail("record_odin_fixtures: " .. #names .. " files got " .. #answers .. " answers") end
+local out = {}
+local i = 1
+while i <= #names do
+  push(out, json_write({name = names[i], outcome = "reviewed", html = answers[i]}))
+  i = i + 1
+end
+replace(OUT, join(out, "\n") .. "\n")
+print("record_odin_fixtures: " .. #names .. " files")
