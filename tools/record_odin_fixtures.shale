@@ -13,8 +13,10 @@
 -- and the language's demo, chosen for what they hold (attributes, directives,
 -- polymorphic parameters, raw strings, runes, numbers in every base,
 -- quaternions). Odin is Ginger Bill's, under the zlib licence, which allows
--- them to be quoted and kept here with their notices. A fixture holds the
--- file's text as it was recorded. Re-record only for a deliberate change to
+-- them to be kept here so long as its notice stays with them: it is
+-- oracle/odin_LICENSE.txt, verbatim from Odin's LICENSE at that commit, and
+-- stays beside the fixtures whenever they are recorded again. A fixture
+-- holds the file's text as it was recorded. Re-record only for a deliberate change to
 -- the Odin lexer, and read every sample that moved in the diff.
 const TOOL = ".zig-cache/syntax_color/harness"
 const OUT = "oracle/odin_files.jsonl"

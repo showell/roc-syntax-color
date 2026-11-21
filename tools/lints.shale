@@ -35,7 +35,7 @@ const LINTS = {
   {recipe = "find_unused_imports", args = {}, checks = {"unused_import"}},
   {recipe = "check_name_types", args = {}, checks = {"name_type", "bare_beside_unit", "no_value"}},
   {recipe = "check_families", args = {}, checks = {"family", "twin_name"}},
-  {recipe = "find_unclear_names", args = {"accepted=tools/accepted_terms.txt"}, checks = {"pure_mutator", "abbreviation", "module_doc"}},
+  {recipe = "find_unclear_names", args = {}, checks = {"pure_mutator", "abbreviation", "module_doc"}},
   {recipe = "check_boundaries", args = {}, checks = {
     "single", "fixed", "entry", "constant", "bool_param", "dead", "unused_api", "same_branches",
   }},

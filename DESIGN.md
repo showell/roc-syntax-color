@@ -32,7 +32,9 @@ directives (`#partial`), a file's `#+` tag and its attributes are keywords:
 attribute the list names is a keyword and a value after its `=` is not. It
 keeps whether the token before was a `.`, after which a word is a field, as
 Zig's does. A word right before `::` is the name a constant declaration
-gives, and a polymorphic parameter's `$T` is a type.
+gives, and a polymorphic parameter's `$T` is a type. That last is a
+simplification: a compile-time value's `$N` (`$N: int`) is colored as a type
+too, since telling the two apart takes the parameter's type after it.
 Shale's follows Shale's own lexer (`src/script/lex.zig` in the
 shale repository). Roc's has no lexer of record to
 follow, and its samples were first recorded from a colorer that read roc-ast's
@@ -105,7 +107,8 @@ package's own answers; those two are all that moved.
   the same way.
 - Odin had none either: its 13 fixtures (`oracle/odin_files.jsonl`, from
   `tools/record_odin_fixtures.shale`) are Odin's own files at ba3b9025f1d3
-  (Ginger Bill's, under the zlib licence): the tokenizer the lexer follows,
+  (Ginger Bill's, under the zlib licence, whose notice stays beside them as
+  `oracle/odin_LICENSE.txt`, verbatim from that commit): the tokenizer the lexer follows,
   the runtime's core, the C library's stdio bindings, the language's demo and
   nine files of its core library, read by eye the same way.
 - The gate takes about 3 seconds on a warm Roc cache.
