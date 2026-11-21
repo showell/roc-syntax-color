@@ -21,6 +21,18 @@ the token before was `struct`, `union` or `enum` (a tag after it is a type),
 `#define` (a name after it is the macro's) or `#include` (a `<` after it opens
 a header's name, a string), and how many braces are open: a word called
 outside every brace is a function's name, and inside them a call is plain.
+Odin's follows Odin's own tokenizer (core/odin/tokenizer in Odin's
+repository): its block comments nest, a string quoted three times over
+(`"""`, or three backticks) runs to the next three, a backtick's raw string
+crosses lines, and a number takes its base's digits after `0b`, `0o`, `0d`,
+`0z`, `0x` or `0h`, then a fraction unless `..` follows, an exponent, and an
+imaginary or quaternion part's `i`, `j` or `k`. As C's directives are, its
+directives (`#partial`), a file's `#+` tag and its attributes are keywords:
+`@name` is one keyword, and after `@(` the lexer counts parentheses, so each
+attribute the list names is a keyword and a value after its `=` is not. It
+keeps whether the token before was a `.`, after which a word is a field, as
+Zig's does. A word right before `::` is the name a constant declaration
+gives, and a polymorphic parameter's `$T` is a type.
 Shale's follows Shale's own lexer (`src/script/lex.zig` in the
 shale repository). Roc's has no lexer of record to
 follow, and its samples were first recorded from a colorer that read roc-ast's
@@ -43,7 +55,9 @@ color the Roc and Shale samples' frozen texts again, from this checkout;
 `tools/record_js_fixtures.shale` and `tools/record_zig_fixtures.shale` read
 their files from a roc-apps checkout with this one beside it, and
 `tools/record_c_fixtures.shale` reads Shale's C beside this checkout and
-fetches git's first commit from GitHub at that commit. Each recorder's header
+fetches git's first commit from GitHub at that commit, and
+`tools/record_odin_fixtures.shale` fetches Odin's files from Odin's
+repository on GitHub at one commit. Each recorder's header
 says what it writes.
 
 A header's keywords follow Roc's tokenizer at the pin: `app`, `hosted`,
@@ -89,6 +103,11 @@ package's own answers; those two are all that moved.
   `tools/record_c_fixtures.shale`) are six files of git's first commit
   (e83c5163, Linus Torvalds' own) and seven of Shale's C runtime, read by eye
   the same way.
+- Odin had none either: its 13 fixtures (`oracle/odin_files.jsonl`, from
+  `tools/record_odin_fixtures.shale`) are Odin's own files at ba3b9025f1d3
+  (Ginger Bill's, under the zlib licence): the tokenizer the lexer follows,
+  the runtime's core, the C library's stdio bindings, the language's demo and
+  nine files of its core library, read by eye the same way.
 - The gate takes about 3 seconds on a warm Roc cache.
 - Two books in roc-apps color their code with it, behind the book builder's
   coloring hook: the Safari tutorial (`canvas_apps/safari/tutorial/app/QuotedColor.roc`)
