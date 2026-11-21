@@ -1,0 +1,65 @@
+-- budget: steps=400000000 arena_bytes=1500000000 call_bytes=40000000
+-- This records oracle/python_files.jsonl, the Python fixtures. No script
+-- colored Python before the package did, so the fixtures are the package's
+-- own answers for real Python, each read by eye before it was committed;
+-- tools/verify.shale then holds the package to them. Run it from this
+-- repository's root, after tools/verify.shale has built the harness:
+--
+--   shale tools/record_python_fixtures.shale
+--
+-- The files are CPython's standard library and tests at the v3.14.0 release,
+-- fetched from GitHub at that commit, so they never move. They are under the
+-- PSF License, which allows them to be kept here so long as its notice stays
+-- with them: it is oracle/python_LICENSE.txt, verbatim from CPython's LICENSE
+-- at that commit, and stays beside the fixtures whenever they are recorded
+-- again. Re-record only for a deliberate change to the Python lexer, and read
+-- every sample that moved in the diff.
+const TOOL = ".zig-cache/syntax_color/harness"
+const OUT = "oracle/python_files.jsonl"
+const MARK = "<!-- syntax_color answer -->\n"
+const WANT = "roc-pin: syntax_color's harness, built by its gate"
+const CPYTHON_COMMIT = "ebf955df7a89ed0c7968f79faec1de49f61ed7cb"
+
+-- The Zen of Python, small modules of numbers and raw-string regular
+-- expressions, decorators and dataclasses, a TOML parser, t-strings'
+-- library, and the tests that hold the newest syntax: type aliases,
+-- t-strings, f-strings (nested quotes, specs, comments in fields) and
+-- pattern matching.
+const FILES = {
+  "Lib/this.py",
+  "Lib/colorsys.py",
+  "Lib/textwrap.py",
+  "Lib/fractions.py",
+  "Lib/dataclasses.py",
+  "Lib/_colorize.py",
+  "Lib/tomllib/_parser.py",
+  "Lib/string/templatelib.py",
+  "Lib/annotationlib.py",
+  "Lib/test/test_type_aliases.py",
+  "Lib/test/test_tstring.py",
+  "Lib/test/test_fstring.py",
+  "Lib/test/test_patma.py",
+}
+
+if not exists(TOOL) then fail("record_python_fixtures: no harness at " .. TOOL .. ": run tools/verify.shale first") end
+local names = {}
+local argv = {real(TOOL)}
+for f in FILES do
+  local url = "https://raw.githubusercontent.com/python/cpython/" .. CPYTHON_COMMIT .. "/" .. f
+  local r = http_get(url)
+  if r.status ~= 200 then fail("record_python_fixtures: " .. url .. " answered " .. r.status) end
+  push(names, "cpython@" .. sub(CPYTHON_COMMIT, 1, 12) .. ":" .. f)
+  push(argv, "python")
+  push(argv, r.body)
+end
+local r = must(run(argv, {timeout_ms = 120000, whole = 30000000, want = WANT}))
+local answers = drop(split(r.out, MARK), 1)
+if #answers ~= #names then fail("record_python_fixtures: " .. #names .. " files got " .. #answers .. " answers") end
+local out = {}
+local i = 1
+while i <= #names do
+  push(out, json_write({name = names[i], outcome = "reviewed", html = answers[i]}))
+  i = i + 1
+end
+replace(OUT, join(out, "\n") .. "\n")
+print("record_python_fixtures: " .. #names .. " files")

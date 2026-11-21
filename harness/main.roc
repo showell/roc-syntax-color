@@ -1,8 +1,8 @@
 ## The harness runs the package on Roc's echo platform for the gate,
 ## tools/verify.shale, which hands it its samples as arguments and holds what it
 ## prints to the recorded oracle. The arguments are a run of requests:
-##   `roc TEXT`, `shale TEXT`, `js TEXT`, `zig TEXT`, `c TEXT` and `odin TEXT`
-##   print TEXT colored whole;
+##   `roc TEXT`, `shale TEXT`, `js TEXT`, `zig TEXT`, `c TEXT`, `odin TEXT` and
+##   `python TEXT` print TEXT colored whole;
 ##   `roc-block FILE SPEC` prints the block SPEC shows of FILE, colored as it
 ##   reads in FILE. SPEC is a line a block line: `R START END`, the file's bytes
 ##   from START up to END, or `T TEXT`, a line of its own, colored alone.
@@ -46,6 +46,10 @@ answers_onto = |out, requests| match requests {
 	["c", text, .. as rest] => answers_onto(out.append(SyntaxColor.html(SyntaxColor.c, text)), rest)
 	["odin", text, .. as rest] => answers_onto(
 		out.append(SyntaxColor.html(SyntaxColor.odin, text)),
+		rest,
+	)
+	["python", text, .. as rest] => answers_onto(
+		out.append(SyntaxColor.html(SyntaxColor.python, text)),
 		rest,
 	)
 	["roc-block", file, spec, .. as rest] => answers_onto(out.append(block_html(file, spec)), rest)

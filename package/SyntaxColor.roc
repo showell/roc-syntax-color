@@ -6,11 +6,13 @@
 ## A language is a value of `Language`: its name and its lexer, a function from
 ## the text to spans that cover every byte once. Each language's lexer is a
 ## module of its own (RocSyntax, ShaleSyntax, JsSyntax, ZigSyntax, CSyntax,
-## OdinSyntax), and another language plugs in as one more module and one more value here.
+## OdinSyntax, PythonSyntax), and another language plugs in as one more module
+## and one more value here.
 import Span
 import CSyntax
 import JsSyntax
 import OdinSyntax
+import PythonSyntax
 import RocSyntax
 import ShaleSyntax
 import ZigSyntax
@@ -45,6 +47,11 @@ SyntaxColor :: [].{
 	## keywords, with the classes the others use.
 	odin : SyntaxColor.Language
 	odin = { name: "odin", spans: OdinSyntax.spans }
+
+	## Python, its f-strings' fields colored as code, with the classes the others
+	## use.
+	python : SyntaxColor.Language
+	python = { name: "python", spans: PythonSyntax.spans }
 
 	## The spans of `text` in `language`, covering every byte once, in order.
 	spans : SyntaxColor.Language, Str -> List(Span)
@@ -276,6 +283,12 @@ hostile_pieces = [
 	"$",
 	"#+",
 	"@(",
+	"'''",
+	"f'{",
+	"rb\"",
+	"{{",
+	"\\N{",
+	"1j",
 ]
 
 ## Every text of two hostile pieces, and some longer ones.
@@ -307,10 +320,11 @@ is_faithful = |language, text|
 	Span.is_cover(SyntaxColor.spans(language, text), text.count_utf8_bytes())
 		and without_spans(SyntaxColor.html(language, text)) == SyntaxColor.escaped_text(text)
 
-expect hostile_texts.len() == 2715
+expect hostile_texts.len() == 3375
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.roc, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.shale, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.js, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.zig, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.c, text))
 expect hostile_texts.all(|text| is_faithful(SyntaxColor.odin, text))
+expect hostile_texts.all(|text| is_faithful(SyntaxColor.python, text))

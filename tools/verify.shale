@@ -22,7 +22,7 @@
 --     package's own answer, read by eye (tools/record_roc_fixtures.shale,
 --     tools/record_shale_fixtures.shale, tools/record_js_fixtures.shale,
 --     tools/record_zig_fixtures.shale, tools/record_c_fixtures.shale,
---     tools/record_odin_fixtures.shale).
+--     tools/record_odin_fixtures.shale, tools/record_python_fixtures.shale).
 --
 -- A Roc block is colored as it reads in its file: the harness colors the file
 -- and takes the lines the block's note names, as the book does. The blocks are
@@ -37,8 +37,8 @@ const PACKAGE_DIR = "package"
 const WORK = ".zig-cache/syntax_color"
 const MARK = "<!-- syntax_color answer -->\n"
 const ARG_BYTES = 700000
-const EXPECTS = 235
-const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13, zig_files = 13, c_files = 13, odin_files = 13}
+const EXPECTS = 269
+const CORPORA = {roc_files = 76, roc_blocks = 223, shale_files = 109, js_files = 13, zig_files = 13, c_files = 13, odin_files = 13, python_files = 13}
 const ALONE_MATCHES = 219
 
 const board = {lines = {}, failed = 0}
@@ -78,6 +78,9 @@ function requests()
   end
   for r in read_corpus("odin_files") do
     push(out, {corpus = "odin_files", name = r.name, argv = {"odin", text_of(r.html)}, want = r.html})
+  end
+  for r in read_corpus("python_files") do
+    push(out, {corpus = "python_files", name = r.name, argv = {"python", text_of(r.html)}, want = r.html})
   end
   return out
 end
