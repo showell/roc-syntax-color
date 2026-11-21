@@ -1,6 +1,6 @@
 # roc-syntax-color
 
-A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a `<span class="syn-...">` around each comment, string, number, keyword, name and type. It colors six languages: Roc, JavaScript, Zig, C, Odin and [Shale](https://github.com/showell/shale), a small scripting language by the same author. Using the package takes only Roc.
+A Roc package that colors source code for web pages. Code goes in and HTML comes out, with a `<span class="syn-...">` around each comment, string, number, keyword, name and type. It colors seven languages: Roc, JavaScript, Zig, C, Odin, Python and [Shale](https://github.com/showell/shale), a small scripting language by the same author. Using the package takes only Roc.
 
 The code was written by Claude, an AI coding agent, with human supervision, and the repository is set up for agents to keep extending it: point one at this repo and ask for a new language, and the steps below are what it follows.
 
@@ -53,7 +53,7 @@ It all lives in `package/SyntaxColor.roc`:
 - `SyntaxColor.range_html(text, { spans, start, end })` colors one byte range of the text using the spans of the whole. Color a file once, then show any part of it colored as it reads in place. The range must start and end on character boundaries; one that ends inside a UTF-8 character stops the program.
 - `SyntaxColor.escaped_text(text)` is the text with `&`, `<`, `>`, `"` and `'` escaped, the same escaping the colored output uses.
 
-A language is a `SyntaxColor.Language`, a record `{ name, spans }` whose `spans : Str -> List(Span)` is its lexer. The six are `SyntaxColor.roc`, `SyntaxColor.js`, `SyntaxColor.zig`, `SyntaxColor.c`, `SyntaxColor.odin` and `SyntaxColor.shale`, named `"roc"`, `"js"`, `"zig"`, `"c"`, `"odin"` and `"shale"`. There is no class for C's preprocessor, so a directive (`#include`, `#define`) is colored as a keyword, and so are Odin's directives (`#partial`) and attributes (`@(private)`). Each lexer is a module of its own: `RocSyntax.roc`, `JsSyntax.roc` and so on.
+A language is a `SyntaxColor.Language`, a record `{ name, spans }` whose `spans : Str -> List(Span)` is its lexer. The seven are `SyntaxColor.roc`, `SyntaxColor.js`, `SyntaxColor.zig`, `SyntaxColor.c`, `SyntaxColor.odin`, `SyntaxColor.python` and `SyntaxColor.shale`, named `"roc"`, `"js"`, `"zig"`, `"c"`, `"odin"`, `"python"` and `"shale"`. There is no class for C's preprocessor, so a directive (`#include`, `#define`) is colored as a keyword, and so are Odin's directives (`#partial`) and attributes (`@(private)`). Python's decorators (`@property`) are names. Each lexer is a module of its own: `RocSyntax.roc`, `JsSyntax.roc` and so on.
 
 ## Adding a language
 

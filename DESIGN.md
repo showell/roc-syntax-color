@@ -35,6 +35,18 @@ Zig's does. A word right before `::` is the name a constant declaration
 gives, and a polymorphic parameter's `$T` is a type. That last is a
 simplification: a compile-time value's `$N` (`$N: int`) is colored as a type
 too, since telling the two apart takes the parameter's type after it.
+Python's reads as the language reference's chapter on lexical analysis says
+(at Python 3.15), and keeps a stack of what is open: brackets, an f-string's
+or t-string's text, a replacement field's code, and a field's format spec.
+So a field is colored as code, the text around it as a string, and a nested
+string may reuse its f-string's quote, as Python 3.12 allows. A soft keyword
+(`match`, `case`, `_`, `type`, `lazy`) is a keyword only where its statement
+starts, which the lexer tells from what follows: a subject and a `:` outside
+every bracket for `match` and `case`, a name and a `=` or `[` for `type`.
+The name after `def`, `class` or `type` is a name, and so is a decorator,
+`@` and its dotted name. Indentation and line joining change no color; they
+only say where a statement starts. `PythonSyntax.roc` holds the lexer and
+`PythonLiteral.roc` where its strings and numbers end.
 Shale's follows Shale's own lexer (`src/script/lex.zig` in the
 shale repository). Roc's has no lexer of record to
 follow, and its samples were first recorded from a colorer that read roc-ast's
@@ -59,7 +71,8 @@ their files from a roc-apps checkout with this one beside it, and
 `tools/record_c_fixtures.shale` reads Shale's C beside this checkout and
 fetches git's first commit from GitHub at that commit, and
 `tools/record_odin_fixtures.shale` fetches Odin's files from Odin's
-repository on GitHub at one commit. Each recorder's header
+repository on GitHub at one commit, and `tools/record_python_fixtures.shale`
+fetches CPython's files at its v3.14.0 release. Each recorder's header
 says what it writes.
 
 A header's keywords follow Roc's tokenizer at the pin: `app`, `hosted`,
@@ -111,6 +124,13 @@ package's own answers; those two are all that moved.
   `oracle/odin_LICENSE.txt`, verbatim from that commit): the tokenizer the lexer follows,
   the runtime's core, the C library's stdio bindings, the language's demo and
   nine files of its core library, read by eye the same way.
+- Python had none either: its 13 fixtures (`oracle/python_files.jsonl`, from
+  `tools/record_python_fixtures.shale`) are CPython's files at v3.14.0
+  (ebf955df, under the PSF License, whose notice stays beside them as
+  `oracle/python_LICENSE.txt`, verbatim from that commit): The Zen of Python, colorsys, textwrap,
+  fractions, dataclasses, _colorize, tomllib's parser, string.templatelib,
+  annotationlib, and the tests of type aliases, t-strings, f-strings and
+  pattern matching, read by eye the same way.
 - The gate takes about 3 seconds on a warm Roc cache.
 - Two books in roc-apps color their code with it, behind the book builder's
   coloring hook: the Safari tutorial (`canvas_apps/safari/tutorial/app/QuotedColor.roc`)
