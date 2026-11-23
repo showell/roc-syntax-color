@@ -15,28 +15,28 @@
 -- A count is held exactly, never "at most": HELD names each that isn't zero.
 -- One that falls is a fix, and moves HELD down in the same commit; one that
 -- rises is a new finding, to fix rather than hold. The typed counts
--- roc-apps kept for this folder (rewrite_method_calls' `rewritable` 2 and
+-- roc-apps kept for this folder (rewrite_module_calls_as_method_calls' `rewritable` 2 and
 -- roc-types' `unreached` 1, from roc-types over the harness) are not here:
 -- they need roc-types, which this gate doesn't run.
 --
 -- budget: steps=400000000 arena_bytes=1000000000 output_bytes=1000000
 
 const LINTS = {
-  {recipe = "hunt_names", args = {}, checks = {
+  {recipe = "find_awkward_names", args = {}, checks = {
     "state_effect", "question", "vague", "name_type", "negative", "noun_effect", "command_tense",
     "mixed_tense", "container", "preposition_split", "short_name", "worker_name", "stacked_preposition",
     "taken_word", "bare_participle", "phrase_name", "singular_list", "world_verb", "where_name",
     "stale_doc_name",
   }},
-  {recipe = "check_stacking", args = {}, checks = {"to stack", "to unstack", "long", "wide string"}},
-  {recipe = "find_extra_parens", args = {}, checks = {"paren_if", "wrapped_body", "else_block", "lambda_if"}},
-  {recipe = "check_errors", args = {}, checks = {"error_alias", "optional_tag", "set_fallback", "placeholder", "number_fallback"}},
-  {recipe = "find_deep_calls", args = {"min=4"}, checks = {"nested"}},
+  {recipe = "check_and_fix_group_stacking", args = {}, checks = {"to stack", "to unstack", "long", "wide string"}},
+  {recipe = "find_and_remove_extra_parentheses", args = {}, checks = {"paren_if", "wrapped_body", "else_block", "lambda_if"}},
+  {recipe = "check_how_failure_is_reported", args = {}, checks = {"error_alias", "optional_tag", "set_fallback", "placeholder", "number_fallback"}},
+  {recipe = "find_calls_nested_three_deep", args = {"min=4"}, checks = {"nested"}},
   {recipe = "find_unused_imports", args = {}, checks = {"unused_import"}},
-  {recipe = "check_name_types", args = {}, checks = {"name_type", "bare_beside_unit", "no_value"}},
-  {recipe = "check_families", args = {}, checks = {"family", "twin_name"}},
-  {recipe = "find_unclear_names", args = {}, checks = {"pure_mutator", "abbreviation", "module_doc"}},
-  {recipe = "check_boundaries", args = {}, checks = {
+  {recipe = "find_names_that_disagree_with_their_types", args = {}, checks = {"name_type", "bare_beside_unit", "no_value"}},
+  {recipe = "find_names_that_differ_across_lookalike_modules", args = {}, checks = {"family", "twin_name"}},
+  {recipe = "find_names_and_docs_that_say_too_little", args = {}, checks = {"pure_mutator", "abbreviation", "module_doc"}},
+  {recipe = "find_functions_and_parameters_that_dont_earn_their_keep", args = {}, checks = {
     "single", "fixed", "entry", "constant", "bool_param", "dead", "unused_api", "same_branches",
   }},
 }
@@ -46,14 +46,14 @@ const LINTS = {
 const HELD = {
   -- SyntaxColor.c, named for its language as SyntaxColor.js and .zig are:
   -- C's name is one letter (2026-11-20, with the C lexer).
-  ["hunt_names/short_name"] = 1,
-  ["check_errors/number_fallback"] = 1,
-  ["check_families/twin_name"] = 3,
-  ["check_stacking/wide string"] = 15,
+  ["find_awkward_names/short_name"] = 1,
+  ["check_how_failure_is_reported/number_fallback"] = 1,
+  ["find_names_that_differ_across_lookalike_modules/twin_name"] = 3,
+  ["check_and_fix_group_stacking/wide string"] = 15,
 }
 
 -- The number a summary gives for a check: "check N", or "N check" for
--- check_stacking's "N to stack". Nil when the summary doesn't name it.
+-- check_and_fix_group_stacking's "N to stack". Nil when the summary doesn't name it.
 function count_in_summary(summary, label)
   local after = re_find(summary, "(?:^|[;:,] )" .. label .. " ([0-9]+)")
   if after ~= nil then return tonumber(after.group) end
